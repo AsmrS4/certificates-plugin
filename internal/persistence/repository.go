@@ -20,7 +20,3 @@ type CertificateRepo interface {
 	FindByReceiverIDAndID(receiverId int64, id int64) (*models.Certificate, error)
 	FindAllByReceiverID(receiverId int64) ([]models.Certificate, error)
 }
-
-type DocumentRepo interface {
-	Save(d *models.Document) (int, error)
-}

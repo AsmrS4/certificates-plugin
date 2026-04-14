@@ -1,16 +1,17 @@
 package impl
 
 import (
+	"database/sql"
+
 	"github.com/AsmrS4/certificates-plugin/internal/models"
 	repository "github.com/AsmrS4/certificates-plugin/internal/persistence"
-	"github.com/jmoiron/sqlx"
 )
 
 // указание компилятору проверить, что реализация контракта есть
 var _ repository.CertificateRepo = (*CertRepoImpl)(nil)
 
 type CertRepoImpl struct {
-	db *sqlx.DB
+	db *sql.DB
 }
 
 func (c *CertRepoImpl) FindAll() ([]models.Certificate, error) {
