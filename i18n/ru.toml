@@ -1,0 +1,22 @@
+# Certificates plugin — English translations
+
+# Commands
+order_certificate = "Заказать справку"
+order_statuses = "Статусы заказанных справок"
+find_order_status = "Узнать текущий статус заказа справки"
+cancel_order = "Отменить заказ справки"
+
+# Flow
+select_certificate_type = "Выберите тип справки, которую хотите заказать"
+select_certificate_obtain = "Выберите способ получения справки"
+enter_order_id = "Введите ID заказанной справки"
+confirm_cancel_order= "Хотите отменить заказ?"
+
+# UI
+notify_enabled = "Уведомления включены."
+notify_disabled = "Уведомления отключены."
+
+# Errors
+error_default = "Не удалось обработать запрос. Повторите позднее."
+order_not_found = "Заказ справки с ID - %d не найден." 
+certificate_not_found = "Справка с ID - %d не найдена."

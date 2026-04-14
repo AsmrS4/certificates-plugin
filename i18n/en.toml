@@ -1,0 +1,21 @@
+# Certificates plugin — English translations
+
+# Commands
+order_certificate = "Order certificate"
+order_statuses = "Ordered certificate applications statuses"
+find_order_status = "Find order status by ID"
+cancel_order = "Cancel certificate order"
+
+# Flow
+select_certificate_type = "Select which certificate type you would like to order"
+select_certificate_obtain = "Select a method for obtaining a certificate"
+enter_order_id = "Enter the order request ID"
+confirm_cancel_order= "Would you like to cancel this order?"
+
+# UI
+notify_enabled = "Notifications enabled."
+
+# Errors
+error_default = "An error occurred. Please try again."
+order_not_found = "Certificate order with ID - %d not found." 
+certificate_not_found = "Certificate with ID - %d not found."
