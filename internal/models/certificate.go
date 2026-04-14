@@ -12,7 +12,7 @@ type (
 	ObtainMethod      = enums.ObtainMethod
 )
 
-type CertificateRequest struct {
+type CertificateApplication struct {
 	ID           int64             `json:"id"`
 	StudentID    int64             `json:"student_id"`
 	Status       CertificateStatus `json:"status"`

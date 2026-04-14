@@ -1,14 +1,16 @@
-package main
+package cmd
 
 import (
 	"log"
 
-	certificatesplugin "github.com/AsmrS4/certificates-plugin"
+	"github.com/AsmrS4/certificates-plugin/internal/api/handlers"
 )
 
 func main() {
-	server := new(certificatesplugin.Server)
-	if err := server.Run("9090"); err != nil {
+	server := &Server{}
+	handlers := &handlers.Handler{}
+
+	if err := server.Run("9090", handlers.InitRoutes()); err != nil {
 		log.Fatalf("Server start failed... Message: %s", err.Error())
 	}
 }

@@ -1,4 +1,4 @@
-package certificatesplugin
+package cmd
 
 import (
 	"context"
@@ -10,9 +10,10 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func (server *Server) Run(port string) error {
+func (server *Server) Run(port string, handler http.Handler) error {
 	server.httpServer = &http.Server{
 		Addr:         ":" + port,
+		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
