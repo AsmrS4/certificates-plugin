@@ -3,13 +3,13 @@ package models
 import (
 	"time"
 
-	enums "github.com/AsmrS4/certificates-plugin/internal/enums/certificate"
+	certificates "github.com/AsmrS4/certificates-plugin/internal/enums"
 )
 
 type (
-	CertificateStatus = enums.CertificateStatus
-	CertificateType   = enums.CertificateType
-	ObtainMethod      = enums.ObtainMethod
+	CertificateStatus = certificates.CertificateStatus
+	CertificateType   = certificates.CertificateType
+	ObtainMethod      = certificates.ObtainMethod
 )
 
 type CertificateApplication struct {

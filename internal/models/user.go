@@ -1,11 +1,11 @@
 package models
 
 import (
-	enums "github.com/AsmrS4/certificates-plugin/internal/enums/role"
+	roles "github.com/AsmrS4/certificates-plugin/internal/enums"
 )
 
 type (
-	UserRole = enums.UserRole
+	UserRole = roles.UserRole
 )
 
 type User struct {
