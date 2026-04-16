@@ -58,7 +58,7 @@ status_Done = "готова"
 status_Cancelled = "отклонена"
 
 pending = "отправленные"
-prepare = "готовятся"
+prepare = "в статусе готовятся"
 done = "готовые"
 skip = "все"
 
