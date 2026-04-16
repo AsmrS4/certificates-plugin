@@ -1,13 +1,15 @@
 package persistence
 
 import (
+	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
 )
 
 type CertificateApplicationRepo interface {
 	Save(c *models.CertificateApplication) (int64, error)
 	FindByID(id int64) (*models.CertificateApplication, error)
-	FindAllActive() ([]models.CertificateApplication, error)
+	FindAllActive(userID int64) ([]models.CertificateApplication, error)
+	FindAllWithStatus(userID int64, st enums.CertificateStatus) ([]models.CertificateApplication, error)
 	Update()
 	Cancel(id int64) error
 	Reject(id int64) error

@@ -11,6 +11,7 @@ select_certificate_type = "Select which certificate type you would like to order
 select_certificate_obtain = "Select a method for obtaining a certificate (Paper | Electronic)"
 enter_order_id = "Enter the order request ID"
 confirm_cancel_order= "Would you like to cancel this order?"
+enter_status = "Enter status to filter certificate order list. Skip to show all orders."
 
 # UI
 notify_enabled = "Notifications enabled."
@@ -30,6 +31,8 @@ order_is_not_pending = "An error occurred. Certificate order with ID: %d is prep
 order_created = "Certificate ordered successfully! ID: %d"
 order_found = "Certificate ID: %d"
 order_cancelled_successfully = "Certificate order ID: %d was cancelled successfully!"
+no_orders = "No certificate orders."
+orders_header = "Found orders (%d items):"
 
 # Enums
 certificate_type_StudyPeriod = "Study Period Certificate"

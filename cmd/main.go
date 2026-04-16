@@ -21,6 +21,8 @@ var (
 	cHandler *handler.CertificateHandler
 )
 
+const INTEGER_REGEX = `^\d+$`
+
 func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
@@ -30,7 +32,7 @@ func main() {
 			wasmplugin.Database("Store applications for a certificate").Name("certificate_applications").Build(),
 			wasmplugin.Database("Store uploaded certificates by dean").Name("certificates").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
-			wasmplugin.NotifyReq("Send notificatons").Build(),
+			wasmplugin.NotifyReq("Send notifications").Build(),
 		},
 		Migrations: wasmplugin.MigrationsFromFS(migrationsFS, "migrations"),
 		Triggers: []wasmplugin.Trigger{
@@ -80,13 +82,17 @@ func orderCertificateCommand() wasmplugin.Trigger {
 	}
 }
 
-// прикрутить ссылку на скачивание документа
+// TODO: прикрутить ссылку на скачивание документа
 func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
 		Name:        "find_ordered",
 		Type:        wasmplugin.TriggerMessenger,
 		Description: "Command to find specific ordered certificate by ID",
-		Nodes:       []wasmplugin.Node{},
+		Nodes: []wasmplugin.Node{
+			wasmplugin.NewStep("enter_id").
+				LocalizedText(cat.L("enter_order_id"), wasmplugin.StylePlain).
+				Validate(INTEGER_REGEX),
+		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			return initHandler(ctx).FindOrderByID(ctx)
 		},
@@ -98,7 +104,11 @@ func cancelCertificateOrderCommand() wasmplugin.Trigger {
 		Name:        "cancel_order",
 		Type:        wasmplugin.TriggerMessenger,
 		Description: "Command to cancel application for a certificate",
-		Nodes:       []wasmplugin.Node{},
+		Nodes: []wasmplugin.Node{
+			wasmplugin.NewStep("enter_id").
+				LocalizedText(cat.L("enter_order_id"), wasmplugin.StylePlain).
+				Validate(INTEGER_REGEX),
+		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			return initHandler(ctx).CancelOrderByID(ctx)
 		},
@@ -110,10 +120,12 @@ func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 		Name:        "find_all",
 		Type:        wasmplugin.TriggerMessenger,
 		Description: "Command to find ordered certificates",
-		Nodes:       []wasmplugin.Node{},
+		Nodes: []wasmplugin.Node{
+			wasmplugin.NewStep("enter_status").
+				LocalizedText(cat.L("enter_status"), wasmplugin.StylePlain),
+		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
-			ctx.Reply(wasmplugin.NewMessage("Привет, мир!"))
-			return nil
+			return initHandler(ctx).FindAllActive(ctx)
 		},
 	}
 }

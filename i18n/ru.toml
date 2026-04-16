@@ -11,6 +11,7 @@ select_certificate_type = "Выберите тип справки, котору�
 select_certificate_obtain = "Выберите способ получения справки"
 enter_order_id = "Введите ID заказанной справки"
 confirm_cancel_order= "Хотите отменить заказ?"
+enter_status = "Введите статус для фильтрации списка заказанных справок. Пропустить для вывода всех справок."
 
 # UI
 notify_enabled = "Уведомления включены."
@@ -29,7 +30,9 @@ order_is_not_pending = "Ошибка. Заказ справки ID: %d уже г
 # Responses
 order_created = "Справка успешно заказана! ID: %d"
 order_found = "Заявка ID: %d"
-order_cancelled_successfully = "Certificate order ID: %d was cancelled successfully!"
+order_cancelled_successfully = "Заказ справки ID: %d успешно отменен!"
+no_orders = "Заявки не найдены."
+orders_header = "Найденные заявки (%d элементов):"
 
 # Enums
 certificate_type_StudyPeriod = "Период обучения"

@@ -3,6 +3,7 @@ package impl
 import (
 	"database/sql"
 
+	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
 	repository "github.com/AsmrS4/certificates-plugin/internal/persistence"
 )
@@ -35,7 +36,7 @@ func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, er
 
 	var found models.CertificateApplication
 
-	err := row.Scan(&found.ID, &found.StudentID, &found.ApplicationStatus, &found.CertificateType, &found.ObtainMethod, &found.CreatedAt)
+	err := scanItem(&found, row)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -48,27 +49,75 @@ func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, er
 	return &found, nil
 }
 
+func (r *CertAppRepoImpl) FindAllActive(userID int64) ([]models.CertificateApplication, error) {
+	query := `
+        SELECT id, student_id, certificate_type, obtain_method, application_status, created_at
+        FROM certificate_applications
+        WHERE student_id = $1 AND application_status NOT IN ('Cancelled', 'Rejected')
+        ORDER BY created_at DESC LIMIT 10
+		`
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanItems(rows)
+}
+
+func (r *CertAppRepoImpl) FindAllWithStatus(userID int64, st enums.CertificateStatus) ([]models.CertificateApplication, error) {
+	query := `
+        SELECT id, student_id, certificate_type, obtain_method, application_status, created_at
+        FROM certificate_applications
+        WHERE student_id = $1 AND application_status = $2
+        ORDER BY created_at DESC LIMIT 10
+		`
+	rows, err := r.db.Query(query, userID, st)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanItems(rows)
+}
+
 func (r *CertAppRepoImpl) Cancel(id int64) error {
 	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Cancelled' WHERE id = $1`, id)
 	return err
 }
 
 func (r *CertAppRepoImpl) Done(id int64) error {
-	panic("unimplemented")
-}
-
-func (r *CertAppRepoImpl) FindAllActive() ([]models.CertificateApplication, error) {
-	panic("unimplemented")
+	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Done' WHERE id = $1`, id)
+	return err
 }
 
 func (r *CertAppRepoImpl) Prepare(id int64) error {
-	panic("unimplemented")
+	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Prepare' WHERE id = $1`, id)
+	return err
 }
 
 func (r *CertAppRepoImpl) Reject(id int64) error {
-	panic("unimplemented")
+	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Reject' WHERE id = $1`, id)
+	return err
 }
 
 func (c *CertAppRepoImpl) Update() {
 	panic("unimplemented")
+}
+
+func scanItems(rows *sql.Rows) ([]models.CertificateApplication, error) {
+	var items []models.CertificateApplication
+	for rows.Next() {
+		var item models.CertificateApplication
+		if err := rows.Scan(&item.ID, &item.StudentID, &item.ApplicationStatus, &item.CertificateType, &item.ObtainMethod, &item.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func scanItem(item *models.CertificateApplication, row *sql.Row) error {
+	err := row.Scan(&item.ID, &item.StudentID, &item.ApplicationStatus, &item.CertificateType, &item.ObtainMethod, &item.CreatedAt)
+	return err
 }

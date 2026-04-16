@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
@@ -70,19 +71,39 @@ func (h *CertificateHandler) FindOrderByID(ctx *wasmplugin.EventContext) error {
 	return nil
 }
 
-func (h *CertificateHandler) foundMessageToString(foundOrder *models.CertificateApplication, trans func(key string, args ...any) string) string {
-	tr := trans
-	typeName := tr("certificate_type_" + string(foundOrder.CertificateType))
-	methodName := tr("obtain_method_" + string(foundOrder.ObtainMethod))
-	statusName := tr("status_" + string(foundOrder.ApplicationStatus))
+// TODO: подумать над пагинацией
+func (h *CertificateHandler) FindAllActive(ctx *wasmplugin.EventContext) error {
+	tr := h.cat.Tr(ctx.Locale())
+	status := ctx.Param("status")
+	studentID := ctx.Messenger.UserID
 
-	return fmt.Sprintf(
-		"%s: %d\n%s: %s\n%s: %s\n%s: %s",
-		tr("order_info_id"), foundOrder.ID,
-		tr("order_info_type"), typeName,
-		tr("order_info_obtain_method"), methodName,
-		tr("order_info_status"), statusName,
-	)
+	var orders []models.CertificateApplication
+	var err error
+
+	if len(strings.TrimSpace(status)) == 0 {
+		orders, err = h.service.FindAllActive(studentID)
+	} else {
+		orders, err = h.service.FindAllWithStatus(studentID, status)
+	}
+
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("server error: %s", err.Error()))
+		ctx.Reply(wasmplugin.NewMessage(tr("error_default")))
+	}
+
+	if len(orders) == 0 {
+		ctx.Reply(wasmplugin.NewMessage(tr("no_orders")))
+		return nil
+	}
+
+	res := fmt.Sprintf(tr("orders_header"), len(orders)) + "\n\n"
+	for _, order := range orders {
+		strOrder := h.foundMessageToString(&order, tr)
+		res += strOrder + "\n_______________\n"
+	}
+
+	ctx.Reply(wasmplugin.NewMessage(res))
+	return nil
 }
 
 func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error {
@@ -95,8 +116,8 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 		ctx.Reply(wasmplugin.NewMessage(tr("incorrect_id")))
 		return nil
 	}
-	order, err := h.service.FindByID(id64)
 
+	order, err := h.service.FindByID(id64)
 	if err != nil {
 		ctx.LogError(err.Error())
 		ctx.Reply(wasmplugin.NewMessage(tr("error_default")))
@@ -110,7 +131,6 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 	}
 
 	status := order.ApplicationStatus
-
 	if status != enums.Pending {
 		if status == enums.Cancelled {
 			ctx.LogError(fmt.Sprintf("bad request: order #%d already cancelled", id64))
@@ -136,4 +156,19 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 	ctx.Log(fmt.Sprintf("patch: certificate order #%d was cancelled by %d", order.ID, ctx.Messenger.UserID))
 	ctx.Reply(wasmplugin.NewMessage(tr("order_cancelled_successfully")))
 	return nil
+}
+
+func (h *CertificateHandler) foundMessageToString(foundOrder *models.CertificateApplication, trans func(key string, args ...any) string) string {
+	tr := trans
+	typeName := tr("certificate_type_" + string(foundOrder.CertificateType))
+	methodName := tr("obtain_method_" + string(foundOrder.ObtainMethod))
+	statusName := tr("status_" + string(foundOrder.ApplicationStatus))
+
+	return fmt.Sprintf(
+		"%s: %d\n%s: %s\n%s: %s\n%s: %s",
+		tr("order_info_id"), foundOrder.ID,
+		tr("order_info_type"), typeName,
+		tr("order_info_obtain_method"), methodName,
+		tr("order_info_status"), statusName,
+	)
 }

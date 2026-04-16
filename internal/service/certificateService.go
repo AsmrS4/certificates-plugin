@@ -59,7 +59,31 @@ func (c *CertificateService) CancelCertificateOrder(id int64) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("%s", err.Error())
 	}
+
 	return true, nil
+}
+
+func (c *CertificateService) FindAllActive(userIDint64) ([]models.CertificateApplication, error) {
+	orders, err := c.appRepo.FindAllActive()
+	if err != nil {
+		return nil, fmt.Errorf("%s", err.Error())
+	}
+
+	return orders, nil
+}
+
+func (c *CertificateService) FindAllWithStatus(cs string) ([]models.CertificateApplication, error) {
+	st, err := validateCertificateApplicationStatus(cs)
+	if err != nil {
+		return nil, fmt.Errorf("%s", err.Error())
+	}
+
+	orders, err := c.appRepo.FindAllWithStatus(st)
+	if err != nil {
+		return nil, fmt.Errorf("%s", err.Error())
+	}
+
+	return orders, nil
 }
 
 func validateRequiredType(requiredType string) (enums.CertificateType, error) {
@@ -82,4 +106,15 @@ func validateObtainMethod(requiredMethod string) (enums.ObtainMethod, error) {
 		return "", fmt.Errorf("%s", err.Error())
 	}
 	return m, nil
+}
+
+func validateCertificateApplicationStatus(application_status string) (enums.CertificateStatus, error) {
+	if application_status == "" {
+		return "", fmt.Errorf("Order status is required")
+	}
+	st, err := enums.ParseCertificateStatus(application_status)
+	if err != nil {
+		return "", fmt.Errorf("%s", err.Error())
+	}
+	return st, nil
 }
