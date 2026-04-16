@@ -63,8 +63,8 @@ func (c *CertificateService) CancelCertificateOrder(id int64) (bool, error) {
 	return true, nil
 }
 
-func (c *CertificateService) FindAllActive(userIDint64) ([]models.CertificateApplication, error) {
-	orders, err := c.appRepo.FindAllActive()
+func (c *CertificateService) FindAllActive(userID int64) ([]models.CertificateApplication, error) {
+	orders, err := c.appRepo.FindAllActive(userID)
 	if err != nil {
 		return nil, fmt.Errorf("%s", err.Error())
 	}
@@ -72,13 +72,13 @@ func (c *CertificateService) FindAllActive(userIDint64) ([]models.CertificateApp
 	return orders, nil
 }
 
-func (c *CertificateService) FindAllWithStatus(cs string) ([]models.CertificateApplication, error) {
+func (c *CertificateService) FindAllWithStatus(userID int64, cs string) ([]models.CertificateApplication, error) {
 	st, err := validateCertificateApplicationStatus(cs)
 	if err != nil {
 		return nil, fmt.Errorf("%s", err.Error())
 	}
 
-	orders, err := c.appRepo.FindAllWithStatus(st)
+	orders, err := c.appRepo.FindAllWithStatus(userID, st)
 	if err != nil {
 		return nil, fmt.Errorf("%s", err.Error())
 	}

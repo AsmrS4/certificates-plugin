@@ -80,7 +80,7 @@ func (h *CertificateHandler) FindAllActive(ctx *wasmplugin.EventContext) error {
 	var orders []models.CertificateApplication
 	var err error
 
-	if len(strings.TrimSpace(status)) == 0 {
+	if len(strings.TrimSpace(status)) == 0 || status == "Skip" {
 		orders, err = h.service.FindAllActive(studentID)
 	} else {
 		orders, err = h.service.FindAllWithStatus(studentID, status)

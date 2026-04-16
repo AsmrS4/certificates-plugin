@@ -7,15 +7,24 @@ find_order_status = "Find order status by ID"
 cancel_order = "Cancel certificate order"
 
 # Flow
-select_certificate_type = "Select which certificate type you would like to order (StudyPeriod | Academic | Recommendation | Common)"
-select_certificate_obtain = "Select a method for obtaining a certificate (Paper | Electronic)"
+select_certificate_type = "Select which certificate type you would like to order."
+select_certificate_obtain = "Select a method for obtaining a certificate"
 enter_order_id = "Enter the order request ID"
 confirm_cancel_order= "Would you like to cancel this order?"
 enter_status = "Enter status to filter certificate order list. Skip to show all orders."
+choose_certificate_type = "Available types"
+choose_obtain_method = "Available obtain ways"
+filter_by = "Find by status"
 
 # UI
 notify_enabled = "Notifications enabled."
 notify_disabled = "Notifications disabled."
+study = "Study"
+academy = "Academic"
+recommendation_letter = "Recommendation letter"
+common = "Common"
+paper = "Paper"
+electronic = "Electronic"
 
 # Errors
 error_default = "An error occurred. Please try again."
@@ -47,6 +56,11 @@ status_Rejected = "rejected"
 status_Prepare = "preparing"
 status_Done = "ready"
 status_Cancelled = "cancelled"
+
+pending = "pending"
+prepare = "preparing"
+done = "ready"
+skip = "all active"
 
 order_info_id = "Order ID"
 order_info_type = "Certificate type"

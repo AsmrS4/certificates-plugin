@@ -7,15 +7,24 @@ find_order_status = "Узнать текущий статус заказа сп�
 cancel_order = "Отменить заказ справки"
 
 # Flow
-select_certificate_type = "Выберите тип справки, которую хотите заказать (StudyPeriod | Academic | Recommendation | Common)"
+select_certificate_type = "Выберите тип справки, которую хотите заказать"
 select_certificate_obtain = "Выберите способ получения справки"
 enter_order_id = "Введите ID заказанной справки"
 confirm_cancel_order= "Хотите отменить заказ?"
 enter_status = "Введите статус для фильтрации списка заказанных справок. Пропустить для вывода всех справок."
+choose_certificate_type = "Доступные справок"
+choose_obtain_method = "Доступные способы"
+filter_by = "Показать"
 
 # UI
 notify_enabled = "Уведомления включены."
 notify_disabled = "Уведомления отключены."
+study = "Период обучения"
+academy = "Академическая"
+recommendation_letter = "Рекомендательное письмо"
+common = "Другая"
+paper = "Бумажная"
+electronic = "Электронная"
 
 # Errors
 error_default = "Не удалось обработать запрос. Повторите позднее."
@@ -47,6 +56,11 @@ status_Rejected = "отклонена"
 status_Prepare = "готовится"
 status_Done = "готова"
 status_Cancelled = "отклонена"
+
+pending = "отправленные"
+prepare = "готовятся"
+done = "готовые"
+skip = "все"
 
 order_info_id = "Заказ справки ID"
 order_info_type = "Тип справки"

@@ -71,10 +71,20 @@ func orderCertificateCommand() wasmplugin.Trigger {
 		Description: "Command to start creating application for a certificate",
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("type").
-				LocalizedText(cat.L("select_certificate_type"), wasmplugin.StylePlain),
+				LocalizedText(cat.L("select_certificate_type"), wasmplugin.StyleHeader).
+				LocalizedOptions(cat.L("choose_certificate_type"),
+					wasmplugin.Opt("study", "StudyPeriod"),
+					wasmplugin.Opt("academ", "Academic"),
+					wasmplugin.Opt("recommendation_letter", "Recommendation"),
+					wasmplugin.Opt("common", "Common"),
+				),
 
 			wasmplugin.NewStep("obtain_method").
-				LocalizedText(cat.L("select_certificate_obtain"), wasmplugin.StylePlain),
+				LocalizedText(cat.L("select_certificate_obtain"), wasmplugin.StyleHeader).
+				LocalizedOptions(cat.L("choose_obtain_method"),
+					wasmplugin.Opt("paper", "Paper"),
+					wasmplugin.Opt("electronic", "Electronic"),
+				),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			return initHandler(ctx).CreateOrder(ctx)
@@ -121,8 +131,14 @@ func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 		Type:        wasmplugin.TriggerMessenger,
 		Description: "Command to find ordered certificates",
 		Nodes: []wasmplugin.Node{
-			wasmplugin.NewStep("enter_status").
-				LocalizedText(cat.L("enter_status"), wasmplugin.StylePlain),
+			wasmplugin.NewStep("status").
+				LocalizedText(cat.L("enter_status"), wasmplugin.StyleHeader).
+				LocalizedOptions(cat.L("filter_by"),
+					wasmplugin.Opt("pending", "Pending"),
+					wasmplugin.Opt("prepare", "Prepare"),
+					wasmplugin.Opt("done", "Done"),
+					wasmplugin.Opt("skip", "Skip"),
+				),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			return initHandler(ctx).FindAllActive(ctx)
