@@ -14,17 +14,22 @@ confirm_cancel_order= "Would you like to cancel this order?"
 
 # UI
 notify_enabled = "Notifications enabled."
+notify_disabled = "Notifications disabled."
 
 # Errors
 error_default = "An error occurred. Please try again."
-order_not_found = "Certificate order with ID - %d not found." 
-certificate_not_found = "Certificate with ID - %d not found."
+order_not_found = "Certificate order with ID: %d not found." 
+certificate_not_found = "Certificate with ID: %d not found."
 order_creation_error = "An error occurred. Failed to create certificate order."
 incorrect_id = "Incorrect ID format. Enter integer number."
+order_already_cancelled = "Certificate order with ID: %d already cancelled."
+order_already_rejected = "Certificate order with ID: %d was rejected by dean."
+order_is_not_pending = "An error occurred. Certificate order with ID: %d is preparing or done."
 
 # Responses
 order_created = "Certificate ordered successfully! ID: %d"
 order_found = "Certificate ID: %d"
+order_cancelled_successfully = "Certificate order ID: %d was cancelled successfully!"
 
 # Enums
 certificate_type_StudyPeriod = "Study Period Certificate"
@@ -39,7 +44,6 @@ status_Rejected = "rejected"
 status_Prepare = "preparing"
 status_Done = "ready"
 status_Cancelled = "cancelled"
-
 
 order_info_id = "Order ID"
 order_info_type = "Certificate type"

@@ -54,8 +54,12 @@ func (c *CertificateService) FindByID(id int64) (*models.CertificateApplication,
 	return found, nil
 }
 
-func (c *CertificateService) CancelCertificateOrder(id int64) error {
-	return nil
+func (c *CertificateService) CancelCertificateOrder(id int64) (bool, error) {
+	err := c.appRepo.Cancel(id)
+	if err != nil {
+		return false, fmt.Errorf("%s", err.Error())
+	}
+	return true, nil
 }
 
 func validateRequiredType(requiredType string) (enums.CertificateType, error) {

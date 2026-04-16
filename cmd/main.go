@@ -58,6 +58,7 @@ func initHandler(ctx *wasmplugin.EventContext) *handler.CertificateHandler {
 		certService := service.New(appRepo, certRepo)
 		cHandler = handler.NewHandler(certService, cat)
 	})
+
 	return cHandler
 }
 
@@ -79,6 +80,7 @@ func orderCertificateCommand() wasmplugin.Trigger {
 	}
 }
 
+// прикрутить ссылку на скачивание документа
 func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
 		Name:        "find_ordered",
@@ -98,8 +100,7 @@ func cancelCertificateOrderCommand() wasmplugin.Trigger {
 		Description: "Command to cancel application for a certificate",
 		Nodes:       []wasmplugin.Node{},
 		Handler: func(ctx *wasmplugin.EventContext) error {
-
-			return nil
+			return initHandler(ctx).CancelOrderByID(ctx)
 		},
 	}
 }

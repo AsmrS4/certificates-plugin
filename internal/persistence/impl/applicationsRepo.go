@@ -49,7 +49,8 @@ func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, er
 }
 
 func (r *CertAppRepoImpl) Cancel(id int64) error {
-	panic("unimplemented")
+	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Cancelled' WHERE id = $1`, id)
+	return err
 }
 
 func (r *CertAppRepoImpl) Done(id int64) error {

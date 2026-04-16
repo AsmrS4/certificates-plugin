@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
 	"github.com/AsmrS4/certificates-plugin/internal/service"
 	wasmplugin "github.com/StaZisS/SuperBotGo/sdk/go-plugin"
@@ -44,7 +45,7 @@ func (h *CertificateHandler) FindOrderByID(ctx *wasmplugin.EventContext) error {
 
 	id64, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		ctx.Reply(wasmplugin.NewMessage("Неверный формат ID. Введите число."))
+		ctx.Reply(wasmplugin.NewMessage(tr("incorrect_id")))
 		return nil
 	}
 	order, err := h.service.FindByID(id64)
@@ -82,4 +83,57 @@ func (h *CertificateHandler) foundMessageToString(foundOrder *models.Certificate
 		tr("order_info_obtain_method"), methodName,
 		tr("order_info_status"), statusName,
 	)
+}
+
+func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error {
+
+	tr := h.cat.Tr(ctx.Locale())
+	id := ctx.Param("id")
+
+	id64, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		ctx.Reply(wasmplugin.NewMessage(tr("incorrect_id")))
+		return nil
+	}
+	order, err := h.service.FindByID(id64)
+
+	if err != nil {
+		ctx.LogError(err.Error())
+		ctx.Reply(wasmplugin.NewMessage(tr("error_default")))
+		return nil
+	}
+
+	if order == nil {
+		ctx.LogError(fmt.Sprintf("error: not found certificate order #%d", id64))
+		ctx.Reply(wasmplugin.NewMessage(tr("order_not_found")))
+		return nil
+	}
+
+	status := order.ApplicationStatus
+
+	if status != enums.Pending {
+		if status == enums.Cancelled {
+			ctx.LogError(fmt.Sprintf("bad request: order #%d already cancelled", id64))
+			ctx.Reply(wasmplugin.NewMessage(tr("order_already_cancelled")))
+			return nil
+		}
+		if status == enums.Rejected {
+			ctx.LogError(fmt.Sprintf("bad request: order #%d was rejected", id64))
+			ctx.Reply(wasmplugin.NewMessage(tr("order_already_rejected")))
+			return nil
+		}
+		ctx.LogError(fmt.Sprintf("bad request: order #%d has active status", id64))
+		ctx.Reply(wasmplugin.NewMessage(tr("order_is_not_pending")))
+		return nil
+	}
+
+	_, err = h.service.CancelCertificateOrder(order.ID)
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("server error: %s", err.Error()))
+		ctx.Reply(wasmplugin.NewMessage(tr("error_default")))
+	}
+
+	ctx.Log(fmt.Sprintf("patch: certificate order #%d was cancelled by %d", order.ID, ctx.Messenger.UserID))
+	ctx.Reply(wasmplugin.NewMessage(tr("order_cancelled_successfully")))
+	return nil
 }
