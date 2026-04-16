@@ -1,9 +1,11 @@
 package persistence
 
-import "github.com/AsmrS4/certificates-plugin/internal/models"
+import (
+	"github.com/AsmrS4/certificates-plugin/internal/models"
+)
 
 type CertificateApplicationRepo interface {
-	Save(c *models.CertificateApplication) (int, error)
+	Save(c *models.CertificateApplication) (int64, error)
 	FindByID(id int64) (*models.CertificateApplication, error)
 	FindAllActive() ([]models.CertificateApplication, error)
 	Update()

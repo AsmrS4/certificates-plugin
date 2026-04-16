@@ -7,8 +7,8 @@ find_order_status = "Find order status by ID"
 cancel_order = "Cancel certificate order"
 
 # Flow
-select_certificate_type = "Select which certificate type you would like to order"
-select_certificate_obtain = "Select a method for obtaining a certificate"
+select_certificate_type = "Select which certificate type you would like to order (StudyPeriod | Academic | Recommendation | Common)"
+select_certificate_obtain = "Select a method for obtaining a certificate (Paper | Electronic)"
 enter_order_id = "Enter the order request ID"
 confirm_cancel_order= "Would you like to cancel this order?"
 
@@ -19,3 +19,7 @@ notify_enabled = "Notifications enabled."
 error_default = "An error occurred. Please try again."
 order_not_found = "Certificate order with ID - %d not found." 
 certificate_not_found = "Certificate with ID - %d not found."
+order_creation_error = "An error occurred. Failed to create certificate order."
+
+# Responses
+order_created = "Certificate ordered successfully! ID: %d"

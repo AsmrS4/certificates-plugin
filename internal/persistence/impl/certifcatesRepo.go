@@ -7,7 +7,6 @@ import (
 	repository "github.com/AsmrS4/certificates-plugin/internal/persistence"
 )
 
-// указание компилятору проверить, что реализация контракта есть
 var _ repository.CertificateRepo = (*CertRepoImpl)(nil)
 
 type CertRepoImpl struct {
@@ -32,4 +31,8 @@ func (c *CertRepoImpl) FindByReceiverIDAndID(receiverId int64, id int64) (*model
 
 func (*CertRepoImpl) Save(c *models.Certificate) (int, error) {
 	panic("unimplemented")
+}
+
+func NewCertRepo(db *sql.DB) *CertRepoImpl {
+	return &CertRepoImpl{db: db}
 }

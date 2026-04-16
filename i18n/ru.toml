@@ -7,7 +7,7 @@ find_order_status = "Узнать текущий статус заказа сп�
 cancel_order = "Отменить заказ справки"
 
 # Flow
-select_certificate_type = "Выберите тип справки, которую хотите заказать"
+select_certificate_type = "Выберите тип справки, которую хотите заказать (StudyPeriod | Academic | Recommendation | Common)"
 select_certificate_obtain = "Выберите способ получения справки"
 enter_order_id = "Введите ID заказанной справки"
 confirm_cancel_order= "Хотите отменить заказ?"
@@ -20,3 +20,6 @@ notify_disabled = "Уведомления отключены."
 error_default = "Не удалось обработать запрос. Повторите позднее."
 order_not_found = "Заказ справки с ID - %d не найден." 
 certificate_not_found = "Справка с ID - %d не найдена."
+
+# Responses
+order_created = "Справка успешно заказана! ID: %d"
