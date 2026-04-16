@@ -20,6 +20,26 @@ notify_disabled = "Уведомления отключены."
 error_default = "Не удалось обработать запрос. Повторите позднее."
 order_not_found = "Заказ справки с ID - %d не найден." 
 certificate_not_found = "Справка с ID - %d не найдена."
+incorrect_id = "Неверный формат ID. Введите число."
 
 # Responses
 order_created = "Справка успешно заказана! ID: %d"
+
+# Enums
+certificate_type_StudyPeriod = "Период обучения"
+certificate_type_Academic= "Академическая"
+certificate_type_Recommendation= "Рекомендательное письмо"
+certificate_type_Common= "Другая"
+obtain_method_Paper = "Бумажная"
+obtain_method_Electronic = "Электронная"
+
+status_Pending = "отправлена"
+status_Rejected = "отклонена"
+status_Prepare = "готовится"
+status_Done = "готова"
+status_Cancelled = "отклонена"
+
+order_info_id = "Заказ справки ID"
+order_info_type = "Тип справки"
+order_info_obtain_method = "Способ получения"
+order_info_status = "Статус" 

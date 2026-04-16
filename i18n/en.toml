@@ -20,6 +20,28 @@ error_default = "An error occurred. Please try again."
 order_not_found = "Certificate order with ID - %d not found." 
 certificate_not_found = "Certificate with ID - %d not found."
 order_creation_error = "An error occurred. Failed to create certificate order."
+incorrect_id = "Incorrect ID format. Enter integer number."
 
 # Responses
 order_created = "Certificate ordered successfully! ID: %d"
+order_found = "Certificate ID: %d"
+
+# Enums
+certificate_type_StudyPeriod = "Study Period Certificate"
+certificate_type_Academic = "Academic Certificate"
+certificate_type_Recommendation = "Recommendation Letter"
+certificate_type_Common = "Common"
+obtain_method_Paper = "Paper"
+obtain_method_Electronic = "Electronic"
+
+status_Pending = "pending"
+status_Rejected = "rejected"
+status_Prepare = "preparing"
+status_Done = "ready"
+status_Cancelled = "cancelled"
+
+
+order_info_id = "Order ID"
+order_info_type = "Certificate type"
+order_info_obtain_method = "Obtain method"
+order_info_status = "Status" 

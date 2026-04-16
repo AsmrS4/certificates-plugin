@@ -46,7 +46,15 @@ func (c *CertificateService) CreateCertificateOrder(ctx *wasmplugin.EventContext
 	return id, err
 }
 
-func (c *CertificateService) CancelCertificateOrder(ctx *wasmplugin.EventContext, id int64) error {
+func (c *CertificateService) FindByID(id int64) (*models.CertificateApplication, error) {
+	found, err := c.appRepo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("%s", err.Error())
+	}
+	return found, nil
+}
+
+func (c *CertificateService) CancelCertificateOrder(id int64) error {
 	return nil
 }
 

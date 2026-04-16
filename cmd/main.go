@@ -22,7 +22,6 @@ var (
 )
 
 func main() {
-
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
@@ -33,20 +32,20 @@ func main() {
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
 			wasmplugin.NotifyReq("Send notificatons").Build(),
 		},
+		Migrations: wasmplugin.MigrationsFromFS(migrationsFS, "migrations"),
 		Triggers: []wasmplugin.Trigger{
 			orderCertificateCommand(),
 			cancelCertificateOrderCommand(),
 			findOrderedCertificateByIDCommand(),
 			findAllOrderedCertificatesCommand(),
-			showCommands(),
 		},
 	})
 }
 
 func initHandler(ctx *wasmplugin.EventContext) *handler.CertificateHandler {
 	tr := cat.Tr(ctx.Locale())
-	once.Do(func() {
 
+	once.Do(func() {
 		db, err := persistence.OpenDBConnection("certificate_applications")
 		if err != nil {
 			ctx.LogError("add: db open: " + err.Error())
@@ -80,19 +79,6 @@ func orderCertificateCommand() wasmplugin.Trigger {
 	}
 }
 
-func cancelCertificateOrderCommand() wasmplugin.Trigger {
-	return wasmplugin.Trigger{
-		Name:        "cancel_order",
-		Type:        wasmplugin.TriggerMessenger,
-		Description: "Command to cancel application for a certificate",
-		Nodes:       []wasmplugin.Node{},
-		Handler: func(ctx *wasmplugin.EventContext) error {
-			ctx.Reply(wasmplugin.NewMessage("Привет, мир!"))
-			return nil
-		},
-	}
-}
-
 func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
 		Name:        "find_ordered",
@@ -100,7 +86,19 @@ func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 		Description: "Command to find specific ordered certificate by ID",
 		Nodes:       []wasmplugin.Node{},
 		Handler: func(ctx *wasmplugin.EventContext) error {
-			ctx.Reply(wasmplugin.NewMessage("Привет, мир!"))
+			return initHandler(ctx).FindOrderByID(ctx)
+		},
+	}
+}
+
+func cancelCertificateOrderCommand() wasmplugin.Trigger {
+	return wasmplugin.Trigger{
+		Name:        "cancel_order",
+		Type:        wasmplugin.TriggerMessenger,
+		Description: "Command to cancel application for a certificate",
+		Nodes:       []wasmplugin.Node{},
+		Handler: func(ctx *wasmplugin.EventContext) error {
+
 			return nil
 		},
 	}
@@ -111,19 +109,6 @@ func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 		Name:        "find_all",
 		Type:        wasmplugin.TriggerMessenger,
 		Description: "Command to find ordered certificates",
-		Nodes:       []wasmplugin.Node{},
-		Handler: func(ctx *wasmplugin.EventContext) error {
-			ctx.Reply(wasmplugin.NewMessage("Привет, мир!"))
-			return nil
-		},
-	}
-}
-
-func showCommands() wasmplugin.Trigger {
-	return wasmplugin.Trigger{
-		Name:        "list",
-		Type:        wasmplugin.TriggerMessenger,
-		Description: "Command to show plugin commands",
 		Nodes:       []wasmplugin.Node{},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			ctx.Reply(wasmplugin.NewMessage("Привет, мир!"))
