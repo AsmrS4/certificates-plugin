@@ -27,7 +27,7 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.0.0",
+		Version: "1.0.1",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Name("certificate_applications").Build(),
 			wasmplugin.Database("Store uploaded certificates by dean").Name("certificates").Build(),
