@@ -32,7 +32,7 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.1.0",
+		Version: "1.1.4",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
@@ -124,7 +124,7 @@ func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 		Description: "Find ordered certificate details",
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("enter_id").
-				LocalizedText(cat.L("enter_order_id"), wasmplugin.StylePlain).
+				LocalizedText(cat.L("enter_order_id"), wasmplugin.StyleHeader).
 				Validate(INTEGER_REGEX),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
@@ -140,7 +140,7 @@ func cancelCertificateOrderCommand() wasmplugin.Trigger {
 		Description: "Cancel certificate order",
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("enter_id").
-				LocalizedText(cat.L("enter_order_id"), wasmplugin.StylePlain).
+				LocalizedText(cat.L("enter_order_id"), wasmplugin.StyleHeader).
 				Validate(INTEGER_REGEX),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
@@ -156,7 +156,7 @@ func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 		Description: "Find ordered certificates",
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("status").
-				LocalizedText(cat.L("filter_by"), wasmplugin.StylePlain).
+				LocalizedText(cat.L("filter_by"), wasmplugin.StyleHeader).
 				DynamicOptions("",
 					func(cbCtx *wasmplugin.CallbackContext) []wasmplugin.Option {
 						return []wasmplugin.Option{

@@ -42,7 +42,7 @@ func (h *CertificateHandler) CreateOrder(ctx *wasmplugin.EventContext) error {
 func (h *CertificateHandler) FindOrderByID(ctx *wasmplugin.EventContext) error {
 
 	tr := h.cat.Tr(ctx.Locale())
-	id := ctx.Param("id")
+	id := ctx.Param("enter_id")
 
 	id64, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -59,7 +59,7 @@ func (h *CertificateHandler) FindOrderByID(ctx *wasmplugin.EventContext) error {
 
 	if order == nil {
 		ctx.LogError(fmt.Sprintf("error: not found certificate order #%d", id64))
-		ctx.Reply(wasmplugin.NewMessage(tr("order_not_found")))
+		ctx.Reply(wasmplugin.NewMessage(fmt.Sprintf((tr("order_not_found")), id64)))
 		return nil
 	}
 
@@ -109,7 +109,7 @@ func (h *CertificateHandler) FindAllActive(ctx *wasmplugin.EventContext) error {
 func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error {
 
 	tr := h.cat.Tr(ctx.Locale())
-	id := ctx.Param("id")
+	id := ctx.Param("enter_id")
 
 	id64, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -126,7 +126,7 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 
 	if order == nil {
 		ctx.LogError(fmt.Sprintf("error: not found certificate order #%d", id64))
-		ctx.Reply(wasmplugin.NewMessage(tr("order_not_found")))
+		ctx.Reply(wasmplugin.NewMessage(fmt.Sprintf((tr("order_not_found")), id64)))
 		return nil
 	}
 
@@ -134,16 +134,16 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 	if status != enums.Pending {
 		if status == enums.Cancelled {
 			ctx.LogError(fmt.Sprintf("bad request: order #%d already cancelled", id64))
-			ctx.Reply(wasmplugin.NewMessage(tr("order_already_cancelled")))
+			ctx.Reply(wasmplugin.NewMessage(fmt.Sprintf((tr("order_already_cancelled")), id64)))
 			return nil
 		}
 		if status == enums.Rejected {
 			ctx.LogError(fmt.Sprintf("bad request: order #%d was rejected", id64))
-			ctx.Reply(wasmplugin.NewMessage(tr("order_already_rejected")))
+			ctx.Reply(wasmplugin.NewMessage(fmt.Sprintf((tr("order_already_rejected")), id64)))
 			return nil
 		}
 		ctx.LogError(fmt.Sprintf("bad request: order #%d has active status", id64))
-		ctx.Reply(wasmplugin.NewMessage(tr("order_is_not_pending")))
+		ctx.Reply(wasmplugin.NewMessage(fmt.Sprintf((tr("order_is_not_pending")), id64)))
 		return nil
 	}
 
@@ -154,7 +154,7 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 	}
 
 	ctx.Log(fmt.Sprintf("patch: certificate order #%d was cancelled by %d", order.ID, ctx.Messenger.UserID))
-	ctx.Reply(wasmplugin.NewMessage(tr("order_cancelled_successfully")))
+	ctx.Reply(wasmplugin.NewMessage(fmt.Sprintf((tr("order_cancelled_successfully")), id64)))
 	return nil
 }
 

@@ -51,7 +51,7 @@ func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, er
 
 func (r *CertAppRepoImpl) FindAllActive(userID int64) ([]models.CertificateApplication, error) {
 	query := `
-        SELECT id, student_id, certificate_type, obtain_method, application_status, created_at
+        SELECT id, student_id, application_status, certificate_type, obtain_method, created_at
         FROM certificate_applications
         WHERE student_id = $1 AND application_status NOT IN ('Cancelled', 'Rejected')
         ORDER BY created_at DESC LIMIT 10
@@ -67,7 +67,7 @@ func (r *CertAppRepoImpl) FindAllActive(userID int64) ([]models.CertificateAppli
 
 func (r *CertAppRepoImpl) FindAllWithStatus(userID int64, st enums.CertificateStatus) ([]models.CertificateApplication, error) {
 	query := `
-        SELECT id, student_id, certificate_type, obtain_method, application_status, created_at
+        SELECT id, student_id, application_status, certificate_type, obtain_method, created_at 
         FROM certificate_applications
         WHERE student_id = $1 AND application_status = $2
         ORDER BY created_at DESC LIMIT 10
