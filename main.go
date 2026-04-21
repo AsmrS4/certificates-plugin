@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"fmt"
 	"sync"
 
 	"github.com/AsmrS4/certificates-plugin/internal/handler"
@@ -57,13 +56,6 @@ func initHandler(ctx *wasmplugin.EventContext) *handler.CertificateHandler {
 			ctx.LogError("add: db open: " + err.Error())
 			ctx.Reply(wasmplugin.NewMessage(tr("error")))
 		}
-		var exists bool
-		row := db.QueryRow("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'certificate_applications')")
-		if err := row.Scan(&exists); err != nil {
-			ctx.LogError("check table: " + err.Error())
-		} else {
-			ctx.Log(fmt.Sprintf("table certificate_applications exists: %v", exists))
-		}
 
 		appRepo := impl.NewApplicationRepo(db)
 		certRepo := impl.NewCertRepo(db)
@@ -72,6 +64,7 @@ func initHandler(ctx *wasmplugin.EventContext) *handler.CertificateHandler {
 	})
 
 	if cHandler == nil {
+		ctx.LogError("certificate-plugin/main.go: Handler not initialized.")
 		panic("Handler not initialized.")
 	}
 

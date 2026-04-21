@@ -32,7 +32,7 @@ func (r *CertAppRepoImpl) Save(c *models.CertificateApplication) (int64, error) 
 
 func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, error) {
 	row := r.db.QueryRow(
-		`SELECT id, student_id, application_status, certificate_type, obtain_method, created_at FROM certificate_applications WHERE id = $1`, id)
+		`SELECT id, student_id, application_status, certificate_type, obtain_method, rejection_reason, created_at FROM certificate_applications WHERE id = $1`, id)
 
 	var found models.CertificateApplication
 
@@ -118,6 +118,6 @@ func scanItems(rows *sql.Rows) ([]models.CertificateApplication, error) {
 }
 
 func scanItem(item *models.CertificateApplication, row *sql.Row) error {
-	err := row.Scan(&item.ID, &item.StudentID, &item.ApplicationStatus, &item.CertificateType, &item.ObtainMethod, &item.CreatedAt)
+	err := row.Scan(&item.ID, &item.StudentID, &item.ApplicationStatus, &item.CertificateType, &item.ObtainMethod, &item.RejectionReason, &item.CreatedAt)
 	return err
 }

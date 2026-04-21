@@ -16,6 +16,7 @@ type CertificateApplication struct {
 	ApplicationStatus CertificateStatus `json:"application_status"`
 	CertificateType   CertificateType   `json:"certificate_type"`
 	ObtainMethod      ObtainMethod      `json:"obtain_method"`
+	RejectionReason   string            `json:"rejection_reason"`
 	CreatedAt         string            `json:"created_at"`
 }
 

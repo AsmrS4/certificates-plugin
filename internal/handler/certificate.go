@@ -160,15 +160,16 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 
 func (h *CertificateHandler) foundMessageToString(foundOrder *models.CertificateApplication, trans func(key string, args ...any) string) string {
 	tr := trans
-	typeName := tr("certificate_type_" + string(foundOrder.CertificateType))
-	methodName := tr("obtain_method_" + string(foundOrder.ObtainMethod))
-	statusName := tr("status_" + string(foundOrder.ApplicationStatus))
+	var parts []string
 
-	return fmt.Sprintf(
-		"%s: %d\n%s: %s\n%s: %s\n%s: %s",
-		tr("order_info_id"), foundOrder.ID,
-		tr("order_info_type"), typeName,
-		tr("order_info_obtain_method"), methodName,
-		tr("order_info_status"), statusName,
-	)
+	parts = append(parts, fmt.Sprintf("%s: %d", tr("order_info_id"), foundOrder.ID))
+	parts = append(parts, fmt.Sprintf("%s: %s", tr("order_info_type"), tr("certificate_type_"+string(foundOrder.CertificateType))))
+	parts = append(parts, fmt.Sprintf("%s: %s", tr("order_info_obtain_method"), tr("obtain_method_"+string(foundOrder.ObtainMethod))))
+	parts = append(parts, fmt.Sprintf("%s: %s", tr("order_info_status"), tr("status_"+string(foundOrder.ApplicationStatus))))
+
+	if foundOrder.ApplicationStatus == enums.Rejected && foundOrder.RejectionReason != "" {
+		parts = append(parts, fmt.Sprintf("%s: %s", tr("order_info_rejection_reason"), foundOrder.RejectionReason))
+	}
+
+	return strings.Join(parts, "\n")
 }
