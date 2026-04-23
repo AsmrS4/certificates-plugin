@@ -39,10 +39,6 @@ func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, er
 
 	err := scanItem(&found, row)
 
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +154,39 @@ func (r *CertAppRepoImpl) Prepare(id int64) error {
 	return err
 }
 
-func (r *CertAppRepoImpl) Reject(id int64) error {
-	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Reject' WHERE id = $1`, id)
+func (r *CertAppRepoImpl) Reject(id int64, reason string) error {
+	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Rejected', rejection_reason = $1  WHERE id = $2`, reason, id)
 	return err
+}
+
+func (r *CertAppRepoImpl) IsExists(id int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(`
+        SELECT EXISTS(
+            SELECT 1 FROM certificate_applications 
+            WHERE id = $1
+        )`, id).Scan(&exists)
+	return exists, err
+}
+
+func (r *CertAppRepoImpl) IsPending(id int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(`
+        SELECT EXISTS(
+            SELECT 1 FROM certificate_applications 
+            WHERE id = $1 AND application_status = 'Pending'
+        )`, id).Scan(&exists)
+	return exists, err
+}
+
+func (r *CertAppRepoImpl) IsRejected(id int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(`
+        SELECT EXISTS(
+            SELECT 1 FROM certificate_applications 
+            WHERE id = $1 AND application_status = 'Rejected'
+        )`, id).Scan(&exists)
+	return exists, err
 }
 
 func (c *CertAppRepoImpl) Update() {

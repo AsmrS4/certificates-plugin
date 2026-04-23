@@ -2,7 +2,7 @@ module github.com/AsmrS4/certificates-plugin
 
 go 1.26.1
 
-require github.com/StaZisS/SuperBotGo/sdk/go-plugin v0.1.1
+require github.com/StaZisS/SuperBotGo/sdk/go-plugin v0.1.2
 
 require (
 	github.com/stretchr/testify v1.11.1 // indirect

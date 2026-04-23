@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
@@ -21,6 +25,34 @@ func NewManagementHandler(cs *service.CertificateService, cms *service.Certifica
 }
 
 func (cmh *CertificateManagementHandler) ProcessRequest(ctx *wasmplugin.EventContext) error {
+	orderID := ctx.HTTP.Query["id"]
+	id64, err := strconv.ParseInt(orderID, 10, 64)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": "Incorrect id format. Int or long value is required."})
+		return nil
+	}
+
+	err = cmh.cmService.ProcessRequest(id64)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ctx.JSON(404, map[string]string{"error": "Order not found"})
+			return nil
+		}
+		if errors.Is(err, models.ErrOrderNotFound) {
+			ctx.JSON(404, map[string]string{"error": err.Error()})
+			return nil
+		}
+		if errors.Is(err, models.ErrOrderNotPending) {
+			ctx.JSON(400, map[string]string{"error": err.Error()})
+			return nil
+		}
+
+		ctx.JSON(500, map[string]string{"error": "Internal server error"})
+		ctx.LogError(fmt.Sprintf("unexpected rejection order error: %s", err.Error()))
+		return nil
+	}
+
+	ctx.JSON(200, true)
 	return nil
 }
 
@@ -29,13 +61,62 @@ func (cmh *CertificateManagementHandler) UploadCertificate(ctx *wasmplugin.Event
 }
 
 func (cmh *CertificateManagementHandler) RejectCertificateRequest(ctx *wasmplugin.EventContext) error {
+	orderID := ctx.HTTP.Query["id"]
+	id64, err := strconv.ParseInt(orderID, 10, 64)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": "Incorrect id format. Int or long value is required."})
+		return nil
+	}
+
+	raw := ctx.HTTP.Body
+	var body map[string]string
+	err = json.Unmarshal([]byte(raw), &body)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": "Incorrect JSON format."})
+		return nil
+	}
+
+	reason, ok := body["reason"]
+	if !ok {
+		ctx.JSON(400, map[string]string{"error": "Reason field is required."})
+		return nil
+	}
+	if len(strings.TrimSpace(reason)) == 0 {
+		ctx.JSON(400, map[string]string{"error": "Rejection reason couldn't be blank."})
+		return nil
+	}
+
+	err = cmh.cmService.RejectCertificateRequest(id64, reason)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ctx.JSON(404, map[string]string{"error": "Order not found"})
+			return nil
+		}
+		if errors.Is(err, models.ErrOrderNotFound) {
+			ctx.JSON(404, map[string]string{"error": err.Error()})
+			return nil
+		}
+		if errors.Is(err, models.ErrAlreadyRejected) {
+			ctx.JSON(400, map[string]string{"error": err.Error()})
+			return nil
+		}
+		if errors.Is(err, models.ErrOrderNotPending) {
+			ctx.JSON(400, map[string]string{"error": err.Error()})
+			return nil
+		}
+
+		ctx.JSON(500, map[string]string{"error": "Internal server error"})
+		ctx.LogError(fmt.Sprintf("unexpected rejection order error: %s", err.Error()))
+		return nil
+	}
+
+	ctx.JSON(200, true)
 	return nil
 }
 
 func (cmh *CertificateManagementHandler) FindRequests(ctx *wasmplugin.EventContext) error {
 	var orders []models.CertificateApplication
 	var err error
-
 	filters, err := cmh.validateRequestParams(ctx.HTTP)
 	if err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
@@ -62,11 +143,30 @@ func (cmh *CertificateManagementHandler) FindRequests(ctx *wasmplugin.EventConte
 	}
 
 	ctx.JSON(200, body)
-
 	return nil
 }
 
 func (cmh *CertificateManagementHandler) FindRequestDetails(ctx *wasmplugin.EventContext) error {
+	userID := ctx.HTTP.Query["id"]
+	id64, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": "Incorrect id formate. Required int or long."})
+		return nil
+	}
+
+	order, err := cmh.cService.FindByID(id64)
+	if err != nil {
+		if errors.Is(err, models.ErrOrderNotFound) {
+			ctx.JSON(404, map[string]string{"error": "Order not found"})
+			return nil
+		}
+
+		ctx.JSON(500, map[string]string{"error": "Internal server error"})
+		ctx.LogError(fmt.Sprintf("unexpected rejection order error: %s", err.Error()))
+		return nil
+	}
+
+	ctx.JSON(200, order)
 	return nil
 }
 

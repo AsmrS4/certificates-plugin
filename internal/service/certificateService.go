@@ -1,6 +1,8 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
@@ -49,15 +51,22 @@ func (c *CertificateService) CreateCertificateOrder(ctx *wasmplugin.EventContext
 func (c *CertificateService) FindByID(id int64) (*models.CertificateApplication, error) {
 	found, err := c.appRepo.FindByID(id)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrOrderNotFound
+		}
+		return nil, err
 	}
+
 	return found, nil
 }
 
 func (c *CertificateService) CancelCertificateOrder(id int64) (bool, error) {
 	err := c.appRepo.Cancel(id)
 	if err != nil {
-		return false, fmt.Errorf("%s", err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, models.ErrOrderNotFound
+		}
+		return false, err
 	}
 
 	return true, nil

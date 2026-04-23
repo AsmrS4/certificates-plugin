@@ -32,7 +32,7 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.2.0",
+		Version: "1.2.6",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
@@ -45,6 +45,9 @@ func main() {
 			findOrderedCertificateByIDCommand(),
 			findAllOrderedCertificatesCommand(),
 			findRequests(),
+			findRequestByID(),
+			processCertificateRequest(),
+			rejectCertificateRequest(),
 		},
 	})
 }
@@ -187,13 +190,52 @@ func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 
 func findRequests() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name:        "all",
+		Name:        "Find all certificate orders",
 		Type:        wasmplugin.TriggerHTTP,
-		Description: "Find all ordered certificate requests from users",
+		Description: "Find all ordered certificate requests from users.",
 		Path:        "/api/certificates/all",
 		Methods:     []string{"GET"},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			return deanHandler(ctx).FindRequests(ctx)
+		},
+	}
+}
+
+func findRequestByID() wasmplugin.Trigger {
+	return wasmplugin.Trigger{
+		Name:        "Certificate order details",
+		Type:        wasmplugin.TriggerHTTP,
+		Description: "Find concrete certificate order details",
+		Path:        "/api/certificates",
+		Methods:     []string{"GET"},
+		Handler: func(ctx *wasmplugin.EventContext) error {
+			return deanHandler(ctx).FindRequestDetails(ctx)
+		},
+	}
+}
+
+func processCertificateRequest() wasmplugin.Trigger {
+	return wasmplugin.Trigger{
+		Name:        "Start process certificate order",
+		Type:        wasmplugin.TriggerHTTP,
+		Description: "Start process certificate order",
+		Path:        "/api/certificates/process",
+		Methods:     []string{"POST"},
+		Handler: func(ctx *wasmplugin.EventContext) error {
+			return deanHandler(ctx).ProcessRequest(ctx)
+		},
+	}
+}
+
+func rejectCertificateRequest() wasmplugin.Trigger {
+	return wasmplugin.Trigger{
+		Name:        "Reject certificate order",
+		Type:        wasmplugin.TriggerHTTP,
+		Description: "Rejection process certificate order",
+		Path:        "/api/certificates/reject",
+		Methods:     []string{"DELETE"},
+		Handler: func(ctx *wasmplugin.EventContext) error {
+			return deanHandler(ctx).RejectCertificateRequest(ctx)
 		},
 	}
 }
