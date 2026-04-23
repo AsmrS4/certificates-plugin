@@ -32,11 +32,10 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.1.5",
+		Version: "1.2.0",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
-			wasmplugin.HTTP("Public certificate management API for dean").Build(),
 			wasmplugin.NotifyReq("Send notifications").Build(),
 		},
 		Migrations: wasmplugin.MigrationsFromFS(migrationsFS, "migrations"),
@@ -188,7 +187,7 @@ func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 
 func findRequests() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name:        "find ordered requests",
+		Name:        "all",
 		Type:        wasmplugin.TriggerHTTP,
 		Description: "Find all ordered certificate requests from users",
 		Path:        "/api/certificates/all",

@@ -50,11 +50,15 @@ func (cmh *CertificateManagementHandler) FindRequests(ctx *wasmplugin.EventConte
 		return nil
 	}
 
-	body := map[string]interface{}{
-		"orders": orders,
+	pagination := map[string]interface{}{
 		"limit":  filters.Limit,
 		"offset": filters.Offset,
 		"total":  total,
+	}
+
+	body := map[string]interface{}{
+		"data":       orders,
+		"pagination": pagination,
 	}
 
 	ctx.JSON(200, body)
@@ -121,6 +125,9 @@ func (cmh *CertificateManagementHandler) validateRequestParams(params *wasmplugi
 		offset, err := strconv.ParseInt(rOffset, 10, 32)
 		if err != nil {
 			return nil, fmt.Errorf("The offset value must be positive.")
+		}
+		if offset == 0 {
+			return nil, fmt.Errorf("The offset value must be greater than zero.")
 		}
 		filters.Offset = offset
 	}
