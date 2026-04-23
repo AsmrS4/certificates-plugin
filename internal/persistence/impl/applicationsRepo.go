@@ -32,7 +32,7 @@ func (r *CertAppRepoImpl) Save(c *models.CertificateApplication) (int64, error) 
 
 func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, error) {
 	row := r.db.QueryRow(
-		`SELECT id, student_id, application_status, certificate_type, obtain_method, rejection_reason, created_at FROM certificate_applications WHERE id = $1`, id)
+		`SELECT id, student_id, application_status, certificate_type, obtain_method, COALESCE(rejection_reason, ''), created_at FROM certificate_applications WHERE id = $1`, id)
 
 	var found models.CertificateApplication
 
@@ -79,6 +79,67 @@ func (r *CertAppRepoImpl) FindAllWithStatus(userID int64, st enums.CertificateSt
 	defer rows.Close()
 
 	return scanItems(rows)
+}
+
+func (r *CertAppRepoImpl) FindAllRequests(offset int, limit int) ([]models.CertificateApplication, int64, error) {
+	absOffset := (max(offset-1, 0)) * limit
+	query := `
+        SELECT id, student_id, application_status, certificate_type, obtain_method, created_at 
+        FROM certificate_applications
+        ORDER BY created_at DESC LIMIT $1 OFFSET $2
+		`
+	totalQuery := `
+		SELECT COUNT(*) FROM certificate_applications
+	`
+	rows, err := r.db.Query(query, limit, absOffset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	orders, err := scanItems(rows)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var totalCount int64
+	err = r.db.QueryRow(totalQuery).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return orders, totalCount, nil
+}
+
+func (r *CertAppRepoImpl) FindAllRequestsWithStatus(st enums.CertificateStatus, offset int, limit int) ([]models.CertificateApplication, int64, error) {
+	absOffset := (max(offset-1, 0)) * limit
+	query := `
+        SELECT id, student_id, application_status, certificate_type, obtain_method, created_at 
+        FROM certificate_applications
+		WHERE application_status = $1
+        ORDER BY created_at DESC LIMIT $2 OFFSET $3
+		`
+	totalQuery := `
+		SELECT COUNT(*) FROM certificate_applications
+	`
+	rows, err := r.db.Query(query, st, limit, absOffset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	orders, err := scanItems(rows)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var totalCount int64
+	err = r.db.QueryRow(totalQuery).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return orders, totalCount, nil
 }
 
 func (r *CertAppRepoImpl) Cancel(id int64) error {

@@ -10,6 +10,8 @@ type CertificateApplicationRepo interface {
 	FindByID(id int64) (*models.CertificateApplication, error)
 	FindAllActive(userID int64) ([]models.CertificateApplication, error)
 	FindAllWithStatus(userID int64, st enums.CertificateStatus) ([]models.CertificateApplication, error)
+	FindAllRequests(offset int, limit int) ([]models.CertificateApplication, int64, error)
+	FindAllRequestsWithStatus(st enums.CertificateStatus, offset int, limit int) ([]models.CertificateApplication, int64, error)
 	Update()
 	Cancel(id int64) error
 	Reject(id int64) error

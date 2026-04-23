@@ -23,6 +23,7 @@ var (
 
 	once     sync.Once
 	cHandler *handler.CertificateHandler
+	aHandler *handler.CertificateManagementHandler
 )
 
 const INTEGER_REGEX = `^\d+$`
@@ -31,10 +32,11 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.1.4",
+		Version: "1.1.5",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
+			wasmplugin.HTTP("Public certificate management API for dean").Build(),
 			wasmplugin.NotifyReq("Send notifications").Build(),
 		},
 		Migrations: wasmplugin.MigrationsFromFS(migrationsFS, "migrations"),
@@ -43,11 +45,12 @@ func main() {
 			cancelCertificateOrderCommand(),
 			findOrderedCertificateByIDCommand(),
 			findAllOrderedCertificatesCommand(),
+			findRequests(),
 		},
 	})
 }
 
-func initHandler(ctx *wasmplugin.EventContext) *handler.CertificateHandler {
+func initHandlers(ctx *wasmplugin.EventContext) {
 	tr := cat.Tr(ctx.Locale())
 
 	once.Do(func() {
@@ -60,15 +63,31 @@ func initHandler(ctx *wasmplugin.EventContext) *handler.CertificateHandler {
 		appRepo := impl.NewApplicationRepo(db)
 		certRepo := impl.NewCertRepo(db)
 		certService := service.New(appRepo, certRepo)
+		cmService := service.NewManagementService(appRepo, certRepo)
 		cHandler = handler.NewHandler(certService, cat)
+		aHandler = handler.NewManagementHandler(certService, cmService, cat)
 	})
 
+}
+
+func consumerHandler(ctx *wasmplugin.EventContext) *handler.CertificateHandler {
+	initHandlers(ctx)
 	if cHandler == nil {
-		ctx.LogError("certificate-plugin/main.go: Handler not initialized.")
+		ctx.LogError("certificate-plugin/main.go: Consumer Handler not initialized.")
 		panic("Handler not initialized.")
 	}
 
 	return cHandler
+}
+
+func deanHandler(ctx *wasmplugin.EventContext) *handler.CertificateManagementHandler {
+	initHandlers(ctx)
+	if aHandler == nil {
+		ctx.LogError("certificate-plugin/main.go: Dean Handler not initialized.")
+		panic("Handler not initialized.")
+	}
+
+	return aHandler
 }
 
 func orderCertificateCommand() wasmplugin.Trigger {
@@ -104,7 +123,7 @@ func orderCertificateCommand() wasmplugin.Trigger {
 				),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
-			return initHandler(ctx).CreateOrder(ctx)
+			return consumerHandler(ctx).CreateOrder(ctx)
 		},
 	}
 }
@@ -121,7 +140,7 @@ func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 				Validate(INTEGER_REGEX),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
-			return initHandler(ctx).FindOrderByID(ctx)
+			return consumerHandler(ctx).FindOrderByID(ctx)
 		},
 	}
 }
@@ -137,7 +156,7 @@ func cancelCertificateOrderCommand() wasmplugin.Trigger {
 				Validate(INTEGER_REGEX),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
-			return initHandler(ctx).CancelOrderByID(ctx)
+			return consumerHandler(ctx).CancelOrderByID(ctx)
 		},
 	}
 }
@@ -162,7 +181,20 @@ func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 				),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
-			return initHandler(ctx).FindAllActive(ctx)
+			return consumerHandler(ctx).FindAllActive(ctx)
+		},
+	}
+}
+
+func findRequests() wasmplugin.Trigger {
+	return wasmplugin.Trigger{
+		Name:        "find ordered requests",
+		Type:        wasmplugin.TriggerHTTP,
+		Description: "Find all ordered certificate requests from users",
+		Path:        "/api/certificates/all",
+		Methods:     []string{"GET"},
+		Handler: func(ctx *wasmplugin.EventContext) error {
+			return deanHandler(ctx).FindRequests(ctx)
 		},
 	}
 }
