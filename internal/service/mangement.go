@@ -31,16 +31,9 @@ func (cm *CertificateManagement) FindRequestByID(id int64) error {
 	return nil
 }
 
-func (cm *CertificateManagement) FindAllRequests(st enums.CertificateStatus, offset int, limit int) ([]models.CertificateApplication, int64, error) {
-	var orders []models.CertificateApplication
-	var total int64
-	var err error
+func (cm *CertificateManagement) FindAllRequests(params models.FilterParams) ([]models.CertificateApplication, int64, error) {
 
-	if st == "" {
-		orders, total, err = cm.appRepo.FindAllRequests(offset, limit)
-	} else {
-		orders, total, err = cm.appRepo.FindAllRequestsWithStatus(st, offset, limit)
-	}
+	orders, total, err := cm.appRepo.FindAllRequests(params)
 
 	if err != nil {
 		return nil, 0, err

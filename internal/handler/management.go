@@ -33,26 +33,27 @@ func (cmh *CertificateManagementHandler) RejectCertificateRequest(ctx *wasmplugi
 }
 
 func (cmh *CertificateManagementHandler) FindRequests(ctx *wasmplugin.EventContext) error {
-
-	status, offset, limit, vErr := cmh.validateRequestParams(ctx.HTTP)
-	if vErr != nil {
-		ctx.JSON(400, map[string]string{"error": vErr.Error()})
-	}
-
 	var orders []models.CertificateApplication
 	var err error
 
-	orders, total, err := cmh.cmService.FindAllRequests(status, offset, limit)
+	filters, err := cmh.validateRequestParams(ctx.HTTP)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return nil
+	}
+
+	orders, total, err := cmh.cmService.FindAllRequests(*filters)
 
 	if err != nil {
 		ctx.JSON(500, map[string]string{"error": "Internal server error"})
 		ctx.LogError("http error: " + err.Error())
+		return nil
 	}
 
 	body := map[string]interface{}{
 		"orders": orders,
-		"limit":  limit,
-		"offset": offset,
+		"limit":  filters.Limit,
+		"offset": filters.Offset,
 		"total":  total,
 	}
 
@@ -65,37 +66,64 @@ func (cmh *CertificateManagementHandler) FindRequestDetails(ctx *wasmplugin.Even
 	return nil
 }
 
-func (cmh *CertificateManagementHandler) validateRequestParams(params *wasmplugin.HTTPEventData) (enums.CertificateStatus, int, int, error) {
+func (cmh *CertificateManagementHandler) validateRequestParams(params *wasmplugin.HTTPEventData) (*models.FilterParams, error) {
 	status := params.Query["status"]
+	certificateType := params.Query["type"]
+	userID := params.Query["user_id"]
 	rOffset := params.Query["offset"]
 	rLimit := params.Query["limit"]
-	var st enums.CertificateStatus
-	var err error
 
-	if status == "" && rOffset == "" && rLimit == "" {
-		return "", 0, 10, nil
+	var filters models.FilterParams = models.FilterParams{
+		Limit:  10,
+		Offset: 0,
+	}
+
+	if status == "" && certificateType == "" && userID == "" && rOffset == "" && rLimit == "" {
+		return &filters, nil
 	}
 
 	if status != "" {
-		st, err = enums.ParseCertificateStatus(status)
+		val, err := enums.ParseCertificateStatus(status)
 		if err != nil {
-			return "", 0, 0, fmt.Errorf("%s", err.Error())
+			return nil, fmt.Errorf("%s", err.Error())
 		}
+		filters.CertificateStatus = &val
 	}
 
-	limit, err := strconv.ParseInt(rLimit, 10, 32)
-	if err != nil {
-		return "", 0, 0, fmt.Errorf("The limit value must be positive.")
+	if certificateType != "" {
+		val, err := enums.ParseCertificateType(certificateType)
+		if err != nil {
+			return nil, fmt.Errorf("%s", err.Error())
+		}
+		filters.CertificateType = &val
 	}
 
-	if limit == 0 {
-		return "", 0, 0, fmt.Errorf("The limit value must be greater than zero.")
+	if userID != "" {
+		val, err := strconv.ParseInt(userID, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("Incorrect id format. Required integer")
+		}
+		filters.StudentID = &val
 	}
 
-	offset, err := strconv.ParseInt(rOffset, 10, 32)
-	if err != nil {
-		return "", 0, 0, fmt.Errorf("The offset value must be positive.")
+	if rLimit != "" {
+		limit, err := strconv.ParseInt(rLimit, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("The limit value must be positive.")
+		}
+		if limit == 0 {
+			return nil, fmt.Errorf("The limit value must be greater than zero.")
+		}
+		filters.Limit = limit
 	}
 
-	return st, int(offset), int(limit), nil
+	if rOffset != "" {
+		offset, err := strconv.ParseInt(rOffset, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("The offset value must be positive.")
+		}
+		filters.Offset = offset
+	}
+
+	return &filters, nil
 }

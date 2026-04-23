@@ -2,6 +2,7 @@ package impl
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
@@ -81,17 +82,48 @@ func (r *CertAppRepoImpl) FindAllWithStatus(userID int64, st enums.CertificateSt
 	return scanItems(rows)
 }
 
-func (r *CertAppRepoImpl) FindAllRequests(offset int, limit int) ([]models.CertificateApplication, int64, error) {
-	absOffset := (max(offset-1, 0)) * limit
+func (r *CertAppRepoImpl) FindAllRequests(params models.FilterParams) ([]models.CertificateApplication, int64, error) {
+	page := params.Offset
+	if page < 1 {
+		page = 1
+	}
+	limit := params.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
 	query := `
-        SELECT id, student_id, application_status, certificate_type, obtain_method, created_at 
+        SELECT id, student_id, application_status, certificate_type, obtain_method, created_at
         FROM certificate_applications
-        ORDER BY created_at DESC LIMIT $1 OFFSET $2
-		`
-	totalQuery := `
-		SELECT COUNT(*) FROM certificate_applications
-	`
-	rows, err := r.db.Query(query, limit, absOffset)
+        WHERE 1=1`
+	countQuery := `SELECT COUNT(*) FROM certificate_applications WHERE 1=1`
+	args := []interface{}{}
+	argIdx := 1
+
+	if params.CertificateStatus != nil {
+		query += fmt.Sprintf(" AND application_status = $%d", argIdx)
+		countQuery += fmt.Sprintf(" AND application_status = $%d", argIdx)
+		args = append(args, *params.CertificateStatus)
+		argIdx++
+	}
+	if params.CertificateType != nil {
+		query += fmt.Sprintf(" AND certificate_type = $%d", argIdx)
+		countQuery += fmt.Sprintf(" AND certificate_type = $%d", argIdx)
+		args = append(args, *params.CertificateType)
+		argIdx++
+	}
+	if params.StudentID != nil {
+		query += fmt.Sprintf(" AND student_id = $%d", argIdx)
+		countQuery += fmt.Sprintf(" AND student_id = $%d", argIdx)
+		args = append(args, *params.StudentID)
+		argIdx++
+	}
+
+	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -103,38 +135,7 @@ func (r *CertAppRepoImpl) FindAllRequests(offset int, limit int) ([]models.Certi
 	}
 
 	var totalCount int64
-	err = r.db.QueryRow(totalQuery).Scan(&totalCount)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return orders, totalCount, nil
-}
-
-func (r *CertAppRepoImpl) FindAllRequestsWithStatus(st enums.CertificateStatus, offset int, limit int) ([]models.CertificateApplication, int64, error) {
-	absOffset := (max(offset-1, 0)) * limit
-	query := `
-        SELECT id, student_id, application_status, certificate_type, obtain_method, created_at 
-        FROM certificate_applications
-		WHERE application_status = $1
-        ORDER BY created_at DESC LIMIT $2 OFFSET $3
-		`
-	totalQuery := `
-		SELECT COUNT(*) FROM certificate_applications
-	`
-	rows, err := r.db.Query(query, st, limit, absOffset)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	orders, err := scanItems(rows)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	var totalCount int64
-	err = r.db.QueryRow(totalQuery).Scan(&totalCount)
+	err = r.db.QueryRow(countQuery, args[:argIdx-1]...).Scan(&totalCount)
 	if err != nil {
 		return nil, 0, err
 	}
