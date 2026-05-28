@@ -110,6 +110,11 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 
 	tr := h.cat.Tr(ctx.Locale())
 	id := ctx.Param("enter_id")
+	cancel := ctx.Param("confirm_cancellation")
+
+	if cancel == "no" {
+		return nil
+	}
 
 	id64, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {

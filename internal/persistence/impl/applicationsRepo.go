@@ -149,14 +149,32 @@ func (r *CertAppRepoImpl) Done(id int64) error {
 	return err
 }
 
-func (r *CertAppRepoImpl) Prepare(id int64) error {
-	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Prepare' WHERE id = $1`, id)
-	return err
+func (r *CertAppRepoImpl) Prepare(id int64) (int64, int64, error) {
+	var orderID, studentID int64
+	err := r.db.QueryRow(`
+        UPDATE certificate_applications
+        SET application_status = 'Prepare'
+        WHERE id = $1
+        RETURNING id, student_id
+    `, id).Scan(&orderID, &studentID)
+	if err != nil {
+		return 0, 0, err
+	}
+	return orderID, studentID, nil
 }
 
-func (r *CertAppRepoImpl) Reject(id int64, reason string) error {
-	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Rejected', rejection_reason = $1  WHERE id = $2`, reason, id)
-	return err
+func (r *CertAppRepoImpl) Reject(id int64, reason string) (int64, int64, error) {
+	var orderID, studentID int64
+	err := r.db.QueryRow(`
+        UPDATE certificate_applications
+        SET application_status = 'Rejected', rejection_reason = $1
+        WHERE id = $2
+        RETURNING id, student_id
+    `, reason, id).Scan(&orderID, &studentID)
+	if err != nil {
+		return 0, 0, err
+	}
+	return orderID, studentID, nil
 }
 
 func (r *CertAppRepoImpl) IsExists(id int64) (bool, error) {

@@ -2,9 +2,12 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/AsmrS4/certificates-plugin/internal/handler"
+	"github.com/AsmrS4/certificates-plugin/internal/models"
 	"github.com/AsmrS4/certificates-plugin/internal/persistence"
 	"github.com/AsmrS4/certificates-plugin/internal/persistence/impl"
 	"github.com/AsmrS4/certificates-plugin/internal/service"
@@ -32,11 +35,12 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.2.6",
+		Version: "1.1.0",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
 			wasmplugin.NotifyReq("Send notifications").Build(),
+			wasmplugin.EventsReq("Public events").Build(),
 		},
 		Migrations: wasmplugin.MigrationsFromFS(migrationsFS, "migrations"),
 		Triggers: []wasmplugin.Trigger{
@@ -48,6 +52,8 @@ func main() {
 			findRequestByID(),
 			processCertificateRequest(),
 			rejectCertificateRequest(),
+			uploadCertificateToRequest(),
+			subscribeOnNotifications(),
 		},
 	})
 }
@@ -93,13 +99,14 @@ func deanHandler(ctx *wasmplugin.EventContext) *handler.CertificateManagementHan
 }
 
 func orderCertificateCommand() wasmplugin.Trigger {
-
 	return wasmplugin.Trigger{
-		Name:        "order_certificate",
-		Type:        wasmplugin.TriggerMessenger,
-		Description: "Order certificate",
+		Name: "order_certificate",
+		Type: wasmplugin.TriggerMessenger,
+		Descriptions: map[string]string{
+			"ru": "Заказать справку 📝",
+			"en": "Order certificate 📝",
+		},
 		Nodes: []wasmplugin.Node{
-
 			wasmplugin.NewStep("type").
 				LocalizedText(cat.L("select_certificate_type"), wasmplugin.StylePlain).
 				DynamicOptions("",
@@ -133,9 +140,12 @@ func orderCertificateCommand() wasmplugin.Trigger {
 // TODO: прикрутить ссылку на скачивание документа
 func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name:        "find_ordered",
-		Type:        wasmplugin.TriggerMessenger,
-		Description: "Find ordered certificate details",
+		Name: "find_ordered",
+		Type: wasmplugin.TriggerMessenger,
+		Descriptions: map[string]string{
+			"ru": "Найти заказанную справку",
+			"en": "Find ordered certificate details",
+		},
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("enter_id").
 				LocalizedText(cat.L("enter_order_id"), wasmplugin.StyleHeader).
@@ -149,13 +159,26 @@ func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 
 func cancelCertificateOrderCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name:        "cancel_order",
-		Type:        wasmplugin.TriggerMessenger,
-		Description: "Cancel certificate order",
+		Name: "cancel_order",
+		Type: wasmplugin.TriggerMessenger,
+		Descriptions: map[string]string{
+			"ru": "Отменить заказ справки",
+			"en": "Cancel certificate order",
+		},
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("enter_id").
 				LocalizedText(cat.L("enter_order_id"), wasmplugin.StyleHeader).
 				Validate(INTEGER_REGEX),
+			wasmplugin.NewStep("confirm_cancellation").
+				LocalizedText(cat.L("confirm_cancel_order"), wasmplugin.StyleHeader).
+				DynamicOptions("",
+					func(cbCtx *wasmplugin.CallbackContext) []wasmplugin.Option {
+						return []wasmplugin.Option{
+							wasmplugin.Opt(cat.L("yes")[cbCtx.Locale], "yes"),
+							wasmplugin.Opt(cat.L("no")[cbCtx.Locale], "no"),
+						}
+					},
+				),
 		},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			return consumerHandler(ctx).CancelOrderByID(ctx)
@@ -165,9 +188,12 @@ func cancelCertificateOrderCommand() wasmplugin.Trigger {
 
 func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name:        "find_all",
-		Type:        wasmplugin.TriggerMessenger,
-		Description: "Find ordered certificates",
+		Name: "find_all",
+		Type: wasmplugin.TriggerMessenger,
+		Descriptions: map[string]string{
+			"ru": "Найти заказанные справки",
+			"en": "Find ordered certificates",
+		},
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("status").
 				LocalizedText(cat.L("filter_by"), wasmplugin.StyleHeader).
@@ -236,6 +262,38 @@ func rejectCertificateRequest() wasmplugin.Trigger {
 		Methods:     []string{"DELETE"},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			return deanHandler(ctx).RejectCertificateRequest(ctx)
+		},
+	}
+}
+
+func uploadCertificateToRequest() wasmplugin.Trigger {
+	return wasmplugin.Trigger{
+		Name:        "Upload certificate document",
+		Description: "Upload created document to certificate order",
+		Type:        wasmplugin.TriggerHTTP,
+		Path:        "/api/certificates/upload",
+		Methods:     []string{"POST"},
+		Handler: func(ctx *wasmplugin.EventContext) error {
+			return deanHandler(ctx).UploadCertificate(ctx)
+		},
+	}
+}
+
+func subscribeOnNotifications() wasmplugin.Trigger {
+	return wasmplugin.Trigger{
+		Name:  "on_change_order_status",
+		Type:  wasmplugin.TriggerEvent,
+		Topic: "certificate_order.updated",
+		Handler: func(ctx *wasmplugin.EventContext) error {
+			tr := cat.Tr(ctx.Locale())
+			var payload models.OrderEvent
+			raw := ctx.Event.Payload
+			if err := json.Unmarshal(raw, &payload); err != nil {
+				ctx.LogError(fmt.Sprintf("notification listener error: %s", err.Error()))
+				return nil
+			}
+			message := fmt.Sprintf(tr("change_status_event"), payload.OrderID, payload.OrderStatus)
+			return ctx.NotifyUser(payload.UserID, message, wasmplugin.PriorityNormal)
 		},
 	}
 }

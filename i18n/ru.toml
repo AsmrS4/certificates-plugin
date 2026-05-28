@@ -5,6 +5,8 @@ order_certificate = "Заказать справку"
 order_statuses = "Статусы заказанных справок"
 find_order_status = "Узнать текущий статус заказа справки"
 cancel_order = "Отменить заказ справки"
+yes = "Да"
+no = "Нет"
 
 # Flow
 select_certificate_type = "Выберите тип справки, которую хотите заказать:"
@@ -41,7 +43,8 @@ order_created = "✅ Справка успешно заказана! ID: %d"
 order_found = "🔎 Заявка ID: %d"
 order_cancelled_successfully = "✅ Заказ справки ID: %d успешно отменен!"
 no_orders = "🤷‍♂️ Заявки не найдены."
-orders_header = "🔎 Найденные заявки (%d элементов):"
+orders_header = "🔎 Найденные заявки (%d элем.):"
+change_status_event = "🔔 Статус заказанной справки ID: %d изменился на %s"
 
 # Enums
 certificate_type_StudyPeriod = "Период обучения"

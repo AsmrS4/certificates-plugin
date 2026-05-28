@@ -16,15 +16,13 @@ type CertificateApplicationRepo interface {
 	IsPending(id int64) (bool, error)
 	IsExists(id int64) (bool, error)
 	Cancel(id int64) error
-	Reject(id int64, reason string) error
-	Prepare(id int64) error
+	Reject(id int64, reason string) (int64, int64, error)
+	Prepare(id int64) (int64, int64, error)
 	Done(id int64) error
 }
 
 type CertificateRepo interface {
-	Save(c *models.Certificate) (int, error)
-	FindByID(id int64) (*models.Certificate, error)
+	Save(c *models.Certificate) (int64, error)
 	FindAll() ([]models.Certificate, error)
-	FindByReceiverIDAndID(receiverId int64, id int64) (*models.Certificate, error)
 	FindAllByReceiverID(receiverId int64) ([]models.Certificate, error)
 }

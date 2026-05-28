@@ -5,6 +5,8 @@ order_certificate = "Order certificate"
 order_statuses = "Ordered certificate applications statuses"
 find_order_status = "Find order status by ID"
 cancel_order = "Cancel certificate order"
+yes = "Yes"
+no = "No"
 
 # Flow
 select_certificate_type = "Select which certificate type you would like to order:"
@@ -42,6 +44,7 @@ order_found = "🔎 Certificate ID: %d"
 order_cancelled_successfully = "✅ Certificate order ID: %d was cancelled successfully!"
 no_orders = "🤷‍♂️ No certificate orders."
 orders_header = "🔎 Found orders (%d items):"
+change_status_event = "🔔 The status of the certificate order with ID: %d has been changed to %s"
 
 # Enums
 certificate_type_StudyPeriod = "Study Period Certificate"

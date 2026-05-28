@@ -22,9 +22,15 @@ type CertificateApplication struct {
 
 type Certificate struct {
 	ID         int64  `json:"id"`
-	ReceiverID int64  `json:"receiver_id"`
+	OrderID    int64  `json:"order_id"`
 	AuthorID   int64  `json:"author_id"`
 	FileName   string `json:"file_name,omitempty"`
 	StorageURL string `json:"storage_url,omitempty"`
 	CreatedAt  string `json:"created_at"`
+}
+
+type CertificateData struct {
+	OrderID    int64
+	Filename   string
+	StorageURL string
 }

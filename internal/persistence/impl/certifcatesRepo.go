@@ -13,24 +13,45 @@ type CertRepoImpl struct {
 	db *sql.DB
 }
 
-func (c *CertRepoImpl) FindAll() ([]models.Certificate, error) {
+func (cr *CertRepoImpl) FindAll() ([]models.Certificate, error) {
 	panic("unimplemented")
 }
 
-func (c *CertRepoImpl) FindAllByReceiverID(receiverId int64) ([]models.Certificate, error) {
+func (cr *CertRepoImpl) FindAllByReceiverID(receiverId int64) ([]models.Certificate, error) {
 	panic("unimplemented")
 }
 
-func (c *CertRepoImpl) FindByID(id int64) (*models.Certificate, error) {
-	panic("unimplemented")
-}
+func (cr *CertRepoImpl) Save(c *models.Certificate) (int64, error) {
+	tx, err := cr.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
 
-func (c *CertRepoImpl) FindByReceiverIDAndID(receiverId int64, id int64) (*models.Certificate, error) {
-	panic("unimplemented")
-}
+	var id int64
+	err = tx.QueryRow(
+		`INSERT INTO certificates(author_id, order_id, file_name, storage_url)
+		 VALUES ($1, $2, $3, $4) RETURNING id`,
+		c.AuthorID, c.OrderID, c.FileName, c.StorageURL,
+	).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
 
-func (*CertRepoImpl) Save(c *models.Certificate) (int, error) {
-	panic("unimplemented")
+	_, err = tx.Exec(`UPDATE certificate_applications SET application_status = 'Done' WHERE id = $1`, c.OrderID)
+	if err != nil {
+		return 0, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return id, err
 }
 
 func NewCertRepo(db *sql.DB) *CertRepoImpl {

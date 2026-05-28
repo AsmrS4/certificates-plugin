@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,14 +26,14 @@ func NewManagementHandler(cs *service.CertificateService, cms *service.Certifica
 }
 
 func (cmh *CertificateManagementHandler) ProcessRequest(ctx *wasmplugin.EventContext) error {
-	orderID := ctx.HTTP.Query["id"]
-	id64, err := strconv.ParseInt(orderID, 10, 64)
+	id := ctx.HTTP.Query["id"]
+	id64, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		ctx.JSON(400, map[string]string{"error": "Incorrect id format. Int or long value is required."})
 		return nil
 	}
 
-	err = cmh.cmService.ProcessRequest(id64)
+	orderID, studentID, err := cmh.cmService.ProcessRequest(id64)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.JSON(404, map[string]string{"error": "Order not found"})
@@ -52,17 +53,82 @@ func (cmh *CertificateManagementHandler) ProcessRequest(ctx *wasmplugin.EventCon
 		return nil
 	}
 
+	var event = models.OrderEvent{
+		UserID:      studentID,
+		OrderID:     orderID,
+		OrderStatus: string(enums.Prepare),
+	}
+
+	err = wasmplugin.PublishEvent("certificate_order.updated", event)
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("failed send notification after prepare: %s", err.Error()))
+	}
 	ctx.JSON(200, true)
 	return nil
 }
 
+// TODO:переписать с учетом обновленной спецификацией
 func (cmh *CertificateManagementHandler) UploadCertificate(ctx *wasmplugin.EventContext) error {
+	orderID := ctx.HTTP.Query["id"]
+	id64, err := strconv.ParseInt(orderID, 10, 64)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": "Incorrect id format. Int or long value is required."})
+		return nil
+	}
+
+	rawPayload := ctx.HTTP.Body
+	if rawPayload == "" {
+		ctx.JSON(400, map[string]string{"error": "Payload data is required."})
+		return nil
+	}
+
+	var payload struct {
+		Filename string `json:"filename"`
+		Content  string `json:"content"`
+	}
+
+	err = json.Unmarshal([]byte(ctx.HTTP.Body), &payload)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": "Incorrect payload. Payload must contain \"filename\" and \"content\" fields."})
+		return nil
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(payload.Content, "data:application/octet-stream;base64,"))
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": "Incorrect file format. Uploaded file must be encoded with base64."})
+		ctx.LogError(fmt.Sprintf("file decode error: %s", err.Error()))
+		return nil
+	}
+
+	stored, err := ctx.FileStore(payload.Filename, "application/pdf", "document", decoded)
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("file save error: %s", err.Error()))
+		ctx.JSON(500, map[string]string{"error": "Internal server error."})
+		return nil
+	}
+	url, err := ctx.FileURL(stored.ID)
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("file get stored url error: %s", err.Error()))
+		ctx.JSON(500, map[string]string{"error": "Internal server error."})
+		return nil
+	}
+	err = cmh.cmService.UploadCertificateRequest(models.CertificateData{
+		OrderID:    id64,
+		Filename:   payload.Filename,
+		StorageURL: url,
+	})
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("file store in plugin error: %s", err.Error()))
+		ctx.JSON(500, map[string]string{"error": "Internal server error."})
+		return nil
+	}
+	ctx.JSON(201, map[string]string{"message": "file uploaded and saved successfully."})
 	return nil
 }
 
 func (cmh *CertificateManagementHandler) RejectCertificateRequest(ctx *wasmplugin.EventContext) error {
-	orderID := ctx.HTTP.Query["id"]
-	id64, err := strconv.ParseInt(orderID, 10, 64)
+	id := ctx.HTTP.Query["id"]
+	id64, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		ctx.JSON(400, map[string]string{"error": "Incorrect id format. Int or long value is required."})
 		return nil
@@ -86,7 +152,7 @@ func (cmh *CertificateManagementHandler) RejectCertificateRequest(ctx *wasmplugi
 		return nil
 	}
 
-	err = cmh.cmService.RejectCertificateRequest(id64, reason)
+	orderID, studentID, err := cmh.cmService.RejectCertificateRequest(id64, reason)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.JSON(404, map[string]string{"error": "Order not found"})
@@ -110,6 +176,16 @@ func (cmh *CertificateManagementHandler) RejectCertificateRequest(ctx *wasmplugi
 		return nil
 	}
 
+	var event = models.OrderEvent{
+		UserID:      studentID,
+		OrderID:     orderID,
+		OrderStatus: string(enums.Rejected),
+	}
+
+	err = wasmplugin.PublishEvent("certificate_order.updated", event)
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("failed send notification after reject: %s", err.Error()))
+	}
 	ctx.JSON(200, true)
 	return nil
 }
