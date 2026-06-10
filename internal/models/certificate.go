@@ -24,6 +24,7 @@ type Certificate struct {
 	ID         int64  `json:"id"`
 	OrderID    int64  `json:"order_id"`
 	AuthorID   int64  `json:"author_id"`
+	FileID     string `json:"file_id,omitempty"`
 	FileName   string `json:"file_name,omitempty"`
 	StorageURL string `json:"storage_url,omitempty"`
 	CreatedAt  string `json:"created_at"`
