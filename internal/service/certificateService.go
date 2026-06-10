@@ -8,6 +8,7 @@ import (
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
 	"github.com/AsmrS4/certificates-plugin/internal/persistence"
+
 	wasmplugin "github.com/StaZisS/SuperBotGo/sdk/go-plugin"
 )
 

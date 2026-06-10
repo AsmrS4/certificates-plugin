@@ -39,6 +39,39 @@ func (cm *CertificateManagement) ProcessRequest(id int64) (int64, int64, error) 
 	return orderID, studentID, nil
 }
 
+func (cm *CertificateManagement) ExistsByID(id int64) (bool, error) {
+	exists, err := cm.appRepo.IsExists(id)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (cm *CertificateManagement) FinishProcessingOrder(id int64) (int64, int64, error) {
+	processing, err := cm.appRepo.IsProcessing(id)
+	if err != nil {
+		return 0, 0, err
+	}
+	if !processing {
+		return 0, 0, models.ErrOrderNotFound
+	}
+
+	paper, err := cm.appRepo.IsPaper(id)
+	if err != nil {
+		return 0, 0, err
+	}
+	if !paper {
+		return 0, 0, models.ErrOrderNotInPrepare
+	}
+
+	orderID, studentID, err := cm.appRepo.Done(id)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return orderID, studentID, nil
+}
+
 func (cm *CertificateManagement) RejectCertificateRequest(id int64, reason string) (int64, int64, error) {
 	exists, err := cm.appRepo.IsExists(id)
 	if err != nil {

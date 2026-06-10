@@ -3,8 +3,9 @@ package impl
 import (
 	"database/sql"
 
-	"github.com/AsmrS4/certificates-plugin/internal/models"
 	repository "github.com/AsmrS4/certificates-plugin/internal/persistence"
+
+	"github.com/AsmrS4/certificates-plugin/internal/models"
 )
 
 var _ repository.CertificateRepo = (*CertRepoImpl)(nil)

@@ -12,6 +12,7 @@ import (
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
 	"github.com/AsmrS4/certificates-plugin/internal/service"
+
 	wasmplugin "github.com/StaZisS/SuperBotGo/sdk/go-plugin"
 )
 
@@ -123,6 +124,59 @@ func (cmh *CertificateManagementHandler) UploadCertificate(ctx *wasmplugin.Event
 		return nil
 	}
 	ctx.JSON(201, map[string]string{"message": "file uploaded and saved successfully."})
+	return nil
+}
+
+func (cmh *CertificateManagementHandler) FinishProcessingPaperCertificate(ctx *wasmplugin.EventContext) error {
+	orderID := ctx.HTTP.Query["id"]
+	id64, err := strconv.ParseInt(orderID, 10, 64)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": "Incorrect id format. Int or long value is required."})
+		return nil
+	}
+
+	exists, err := cmh.cmService.ExistsByID(id64)
+	if err != nil {
+		if !exists {
+			ctx.JSON(404, map[string]string{"error": "Order not found."})
+			return nil
+		}
+		ctx.JSON(500, map[string]string{"error": "Internal server error"})
+		ctx.LogError(fmt.Sprintf("unexpected error while finish processing paper order: %s", err.Error()))
+		return nil
+	}
+
+	orderID64, studentID, err := cmh.cmService.FinishProcessingOrder(id64)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ctx.JSON(404, map[string]string{"error": "Order not found"})
+			return nil
+		}
+		if errors.Is(err, models.ErrOrderNotFound) {
+			ctx.JSON(404, map[string]string{"error": err.Error()})
+			return nil
+		}
+		if errors.Is(err, models.ErrOrderNotInPrepare) {
+			ctx.JSON(400, map[string]string{"error": err.Error()})
+			return nil
+		}
+
+		ctx.JSON(500, map[string]string{"error": "Internal server error"})
+		ctx.LogError(fmt.Sprintf("unexpected error while finish processing paper order: %s", err.Error()))
+		return nil
+	}
+
+	var event = models.OrderEvent{
+		UserID:      studentID,
+		OrderID:     orderID64,
+		OrderStatus: string(enums.Done),
+	}
+
+	err = wasmplugin.PublishEvent("certificate_order.updated", event)
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("failed send notification after process complete: %s", err.Error()))
+	}
+	ctx.JSON(200, true)
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/AsmrS4/certificates-plugin/internal/persistence"
 	"github.com/AsmrS4/certificates-plugin/internal/persistence/impl"
 	"github.com/AsmrS4/certificates-plugin/internal/service"
+
 	wasmplugin "github.com/StaZisS/SuperBotGo/sdk/go-plugin"
 )
 
@@ -35,7 +36,7 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.1.0",
+		Version: "1.2.2",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
@@ -53,6 +54,7 @@ func main() {
 			processCertificateRequest(),
 			rejectCertificateRequest(),
 			uploadCertificateToRequest(),
+			finishProcessPaperCertificateRequest(),
 			subscribeOnNotifications(),
 		},
 	})
@@ -100,12 +102,9 @@ func deanHandler(ctx *wasmplugin.EventContext) *handler.CertificateManagementHan
 
 func orderCertificateCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name: "order_certificate",
-		Type: wasmplugin.TriggerMessenger,
-		Descriptions: map[string]string{
-			"ru": "Заказать справку 📝",
-			"en": "Order certificate 📝",
-		},
+		Name:        "order_certificate",
+		Type:        wasmplugin.TriggerMessenger,
+		Description: "Заказать справку 📝",
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("type").
 				LocalizedText(cat.L("select_certificate_type"), wasmplugin.StylePlain).
@@ -140,12 +139,9 @@ func orderCertificateCommand() wasmplugin.Trigger {
 // TODO: прикрутить ссылку на скачивание документа
 func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name: "find_ordered",
-		Type: wasmplugin.TriggerMessenger,
-		Descriptions: map[string]string{
-			"ru": "Найти заказанную справку",
-			"en": "Find ordered certificate details",
-		},
+		Name:        "find_ordered",
+		Type:        wasmplugin.TriggerMessenger,
+		Description: "Найти заказанную справку",
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("enter_id").
 				LocalizedText(cat.L("enter_order_id"), wasmplugin.StyleHeader).
@@ -159,12 +155,9 @@ func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 
 func cancelCertificateOrderCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name: "cancel_order",
-		Type: wasmplugin.TriggerMessenger,
-		Descriptions: map[string]string{
-			"ru": "Отменить заказ справки",
-			"en": "Cancel certificate order",
-		},
+		Name:        "cancel_order",
+		Type:        wasmplugin.TriggerMessenger,
+		Description: "Отменить заказ справки",
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("enter_id").
 				LocalizedText(cat.L("enter_order_id"), wasmplugin.StyleHeader).
@@ -188,12 +181,9 @@ func cancelCertificateOrderCommand() wasmplugin.Trigger {
 
 func findAllOrderedCertificatesCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
-		Name: "find_all",
-		Type: wasmplugin.TriggerMessenger,
-		Descriptions: map[string]string{
-			"ru": "Найти заказанные справки",
-			"en": "Find ordered certificates",
-		},
+		Name:        "find_all",
+		Type:        wasmplugin.TriggerMessenger,
+		Description: "Найти заказанные справки",
 		Nodes: []wasmplugin.Node{
 			wasmplugin.NewStep("status").
 				LocalizedText(cat.L("filter_by"), wasmplugin.StyleHeader).
@@ -249,6 +239,19 @@ func processCertificateRequest() wasmplugin.Trigger {
 		Methods:     []string{"POST"},
 		Handler: func(ctx *wasmplugin.EventContext) error {
 			return deanHandler(ctx).ProcessRequest(ctx)
+		},
+	}
+}
+
+func finishProcessPaperCertificateRequest() wasmplugin.Trigger {
+	return wasmplugin.Trigger{
+		Name:        "Finish process certificate order with paper obtain method",
+		Type:        wasmplugin.TriggerHTTP,
+		Description: "Finish process certificate order",
+		Path:        "/api/certificates/finish",
+		Methods:     []string{"POST"},
+		Handler: func(ctx *wasmplugin.EventContext) error {
+			return deanHandler(ctx).FinishProcessingPaperCertificate(ctx)
 		},
 	}
 }

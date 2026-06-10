@@ -12,13 +12,15 @@ type CertificateApplicationRepo interface {
 	FindAllWithStatus(userID int64, st enums.CertificateStatus) ([]models.CertificateApplication, error)
 	FindAllRequests(params models.FilterParams) ([]models.CertificateApplication, int64, error)
 	Update()
+	IsPaper(id int64) (bool, error)
 	IsRejected(id int64) (bool, error)
 	IsPending(id int64) (bool, error)
 	IsExists(id int64) (bool, error)
+	IsProcessing(id int64) (bool, error)
 	Cancel(id int64) error
 	Reject(id int64, reason string) (int64, int64, error)
 	Prepare(id int64) (int64, int64, error)
-	Done(id int64) error
+	Done(id int64) (int64, int64, error)
 }
 
 type CertificateRepo interface {

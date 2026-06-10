@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 
+	repository "github.com/AsmrS4/certificates-plugin/internal/persistence"
+
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
-	repository "github.com/AsmrS4/certificates-plugin/internal/persistence"
 )
 
 var _ repository.CertificateApplicationRepo = (*CertAppRepoImpl)(nil)
@@ -92,8 +93,8 @@ func (r *CertAppRepoImpl) FindAllRequests(params models.FilterParams) ([]models.
 	query := `
         SELECT id, student_id, application_status, certificate_type, obtain_method, created_at
         FROM certificate_applications
-        WHERE 1=1`
-	countQuery := `SELECT COUNT(*) FROM certificate_applications WHERE 1=1`
+        WHERE 1=1 AND application_status != 'Cancelled'`
+	countQuery := `SELECT COUNT(*) FROM certificate_applications WHERE 1=1 AND application_status != 'Cancelled'`
 	args := []interface{}{}
 	argIdx := 1
 
@@ -144,9 +145,18 @@ func (r *CertAppRepoImpl) Cancel(id int64) error {
 	return err
 }
 
-func (r *CertAppRepoImpl) Done(id int64) error {
-	_, err := r.db.Exec(`UPDATE certificate_applications SET application_status = 'Done' WHERE id = $1`, id)
-	return err
+func (r *CertAppRepoImpl) Done(id int64) (int64, int64, error) {
+	var orderID, studentID int64
+	err := r.db.QueryRow(`
+        UPDATE certificate_applications
+        SET application_status = 'Done'
+        WHERE id = $1
+        RETURNING id, student_id
+    `, id).Scan(&orderID, &studentID)
+	if err != nil {
+		return 0, 0, err
+	}
+	return orderID, studentID, nil
 }
 
 func (r *CertAppRepoImpl) Prepare(id int64) (int64, int64, error) {
@@ -187,6 +197,17 @@ func (r *CertAppRepoImpl) IsExists(id int64) (bool, error) {
 	return exists, err
 }
 
+// IsPaper implements [persistence.CertificateApplicationRepo].
+func (r *CertAppRepoImpl) IsPaper(id int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(`
+        SELECT EXISTS(
+            SELECT 1 FROM certificate_applications 
+            WHERE id = $1 AND obtain_method = 'Paper'
+        )`, id).Scan(&exists)
+	return exists, err
+}
+
 func (r *CertAppRepoImpl) IsPending(id int64) (bool, error) {
 	var exists bool
 	err := r.db.QueryRow(`
@@ -203,6 +224,17 @@ func (r *CertAppRepoImpl) IsRejected(id int64) (bool, error) {
         SELECT EXISTS(
             SELECT 1 FROM certificate_applications 
             WHERE id = $1 AND application_status = 'Rejected'
+        )`, id).Scan(&exists)
+	return exists, err
+}
+
+// IsProcessing implements [persistence.CertificateApplicationRepo].
+func (r *CertAppRepoImpl) IsProcessing(id int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(`
+        SELECT EXISTS(
+            SELECT 1 FROM certificate_applications 
+            WHERE id = $1 AND application_status = 'Prepare'
         )`, id).Scan(&exists)
 	return exists, err
 }
