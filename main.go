@@ -12,7 +12,7 @@ import (
 	"github.com/AsmrS4/certificates-plugin/internal/persistence/impl"
 	"github.com/AsmrS4/certificates-plugin/internal/service"
 
-	wasmplugin "github.com/StaZisS/SuperBotGo/sdk/go-plugin"
+	wasmplugin "github.com/SuperBotForge/sdk/go-sdk"
 )
 
 //go:embed migrations/*.sql
@@ -36,7 +36,7 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.2.5",
+		Version: "1.2.8",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),

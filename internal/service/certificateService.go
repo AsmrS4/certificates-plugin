@@ -8,8 +8,7 @@ import (
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
 	"github.com/AsmrS4/certificates-plugin/internal/persistence"
-
-	wasmplugin "github.com/StaZisS/SuperBotGo/sdk/go-plugin"
+	wasmplugin "github.com/SuperBotForge/sdk/go-sdk"
 )
 
 type CertificateService struct {
@@ -25,6 +24,10 @@ func (c *CertificateService) CreateCertificateOrder(ctx *wasmplugin.EventContext
 	certificateType := ctx.Param("type")
 	obtainMethod := ctx.Param("obtain_method")
 	studentID := ctx.Messenger.UserID
+	userInfo, err := ctx.GetUserInfo(studentID)
+	if err != nil {
+		return 0, fmt.Errorf("%s", err.Error())
+	}
 
 	validatedType, err := validateRequiredType(certificateType)
 	if err != nil {
@@ -39,6 +42,7 @@ func (c *CertificateService) CreateCertificateOrder(ctx *wasmplugin.EventContext
 		StudentID:       studentID,
 		CertificateType: validatedType,
 		ObtainMethod:    validatedMethod,
+		FullName:        userInfo.FullName,
 	}
 
 	id, err := c.appRepo.Save(newOrder)

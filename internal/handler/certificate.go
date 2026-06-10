@@ -9,7 +9,7 @@ import (
 	"github.com/AsmrS4/certificates-plugin/internal/models"
 	"github.com/AsmrS4/certificates-plugin/internal/service"
 
-	wasmplugin "github.com/StaZisS/SuperBotGo/sdk/go-plugin"
+	wasmplugin "github.com/SuperBotForge/sdk/go-sdk"
 )
 
 type CertificateHandler struct {

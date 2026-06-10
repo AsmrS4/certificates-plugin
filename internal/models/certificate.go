@@ -13,6 +13,7 @@ type (
 type CertificateApplication struct {
 	ID                int64             `json:"id"`
 	StudentID         int64             `json:"student_id"`
+	FullName          string            `json:"full_name"`
 	ApplicationStatus CertificateStatus `json:"application_status"`
 	CertificateType   CertificateType   `json:"certificate_type"`
 	ObtainMethod      ObtainMethod      `json:"obtain_method"`
