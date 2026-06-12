@@ -64,7 +64,21 @@ func (h *CertificateHandler) FindOrderByID(ctx *wasmplugin.EventContext) error {
 		return nil
 	}
 
-	localizedMessage := h.foundMessageToString(order, tr)
+	var orderFile *models.CertificateShort
+	var storageURL string
+	if order.ApplicationStatus == enums.Done && order.ObtainMethod == enums.Electronic {
+		orderFile, err = h.service.GetCertificateFileByOrderID(order.ID)
+		if err != nil {
+			ctx.LogError(fmt.Sprintf("error fetching certificate file for order #%d: %s", order.ID, err.Error()))
+			ctx.Reply(wasmplugin.NewMessage(tr("error_default")))
+			return nil
+		}
+		if orderFile.StorageURL != "" {
+			storageURL = orderFile.StorageURL
+		}
+	}
+
+	localizedMessage := h.foundMessageToString(order, storageURL, tr)
 
 	ctx.Reply(wasmplugin.NewMessage(localizedMessage))
 	ctx.Log(fmt.Sprintf("get: found certificate order #%d  %d", order.ID, ctx.Messenger.UserID))
@@ -72,7 +86,6 @@ func (h *CertificateHandler) FindOrderByID(ctx *wasmplugin.EventContext) error {
 	return nil
 }
 
-// TODO: подумать над пагинацией
 func (h *CertificateHandler) FindAllActive(ctx *wasmplugin.EventContext) error {
 	tr := h.cat.Tr(ctx.Locale())
 	status := ctx.Param("status")
@@ -99,7 +112,7 @@ func (h *CertificateHandler) FindAllActive(ctx *wasmplugin.EventContext) error {
 
 	res := fmt.Sprintf(tr("orders_header"), len(orders)) + "\n\n"
 	for _, order := range orders {
-		strOrder := h.foundMessageToString(&order, tr)
+		strOrder := h.foundMessageToString(&order, "", tr)
 		res += strOrder + "\n_______________\n"
 	}
 
@@ -164,7 +177,7 @@ func (h *CertificateHandler) CancelOrderByID(ctx *wasmplugin.EventContext) error
 	return nil
 }
 
-func (h *CertificateHandler) foundMessageToString(foundOrder *models.CertificateApplication, trans func(key string, args ...any) string) string {
+func (h *CertificateHandler) foundMessageToString(foundOrder *models.CertificateApplication, storageURL string, trans func(key string, args ...any) string) string {
 	tr := trans
 	var parts []string
 
@@ -175,6 +188,13 @@ func (h *CertificateHandler) foundMessageToString(foundOrder *models.Certificate
 
 	if foundOrder.ApplicationStatus == enums.Rejected && foundOrder.RejectionReason != "" {
 		parts = append(parts, fmt.Sprintf("%s: %s", tr("order_info_rejection_reason"), foundOrder.RejectionReason))
+	}
+
+	if foundOrder.ApplicationStatus == enums.Done && foundOrder.ObtainMethod == enums.Paper {
+		parts = append(parts, fmt.Sprintf("\n%s", tr("order_paper_done_comment")))
+	}
+	if storageURL != "" {
+		parts = append(parts, fmt.Sprintf("\n%s: \n%s", tr("download"), storageURL))
 	}
 
 	return strings.Join(parts, "\n")

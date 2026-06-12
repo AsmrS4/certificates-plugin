@@ -105,27 +105,29 @@ func (cm *CertificateManagement) RejectCertificateRequest(id int64, reason strin
 	return orderID, studentID, nil
 }
 
-func (cm *CertificateManagement) UploadCertificateRequest(file models.CertificateData) error {
+func (cm *CertificateManagement) UploadCertificateRequest(file models.CertificateData) (int64, int64, error) {
 	exists, err := cm.appRepo.IsExists(file.OrderID)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	if !exists {
-		return models.ErrOrderNotFound
+		return 0, 0, models.ErrOrderNotFound
 	}
 
 	certificateDocument := models.Certificate{
 		OrderID:    file.OrderID,
 		AuthorID:   1,
 		FileName:   file.Filename,
+		FileID:     file.FileID,
 		StorageURL: file.StorageURL,
 	}
-	_, err = cm.certRepo.Save(&certificateDocument)
+
+	orderID, studentID, err := cm.certRepo.Save(&certificateDocument)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
-	return nil
+	return orderID, studentID, nil
 }
 
 func (cm *CertificateManagement) FindAllRequests(params models.FilterParams) ([]models.CertificateApplication, int64, error) {

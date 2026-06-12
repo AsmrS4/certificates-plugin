@@ -13,7 +13,7 @@ type (
 type CertificateApplication struct {
 	ID                int64             `json:"id"`
 	StudentID         int64             `json:"student_id"`
-	FullName          string            `json:"full_name"`
+	FullName          string            `json:"full_name,omitempty"`
 	ApplicationStatus CertificateStatus `json:"application_status"`
 	CertificateType   CertificateType   `json:"certificate_type"`
 	ObtainMethod      ObtainMethod      `json:"obtain_method"`
@@ -24,7 +24,7 @@ type CertificateApplication struct {
 type Certificate struct {
 	ID         int64  `json:"id"`
 	OrderID    int64  `json:"order_id"`
-	AuthorID   int64  `json:"author_id"`
+	AuthorID   int64  `json:"author_id,omitempty"`
 	FileID     string `json:"file_id,omitempty"`
 	FileName   string `json:"file_name,omitempty"`
 	StorageURL string `json:"storage_url,omitempty"`
@@ -33,6 +33,13 @@ type Certificate struct {
 
 type CertificateData struct {
 	OrderID    int64
+	FileID     string
 	Filename   string
 	StorageURL string
+}
+
+type CertificateShort struct {
+	ID         string
+	StorageURL string
+	FileName   string
 }

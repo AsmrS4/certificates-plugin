@@ -36,7 +36,7 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.2.8",
+		Version: "1.3.6",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
@@ -136,7 +136,6 @@ func orderCertificateCommand() wasmplugin.Trigger {
 	}
 }
 
-// TODO: прикрутить ссылку на скачивание документа
 func findOrderedCertificateByIDCommand() wasmplugin.Trigger {
 	return wasmplugin.Trigger{
 		Name:        "find_ordered",

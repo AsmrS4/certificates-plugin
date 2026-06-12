@@ -65,6 +65,14 @@ func (c *CertificateService) FindByID(id int64) (*models.CertificateApplication,
 	return found, nil
 }
 
+func (c *CertificateService) GetCertificateFileByOrderID(orderID int64) (*models.CertificateShort, error) {
+	cert, err := c.certRepo.FindCertificateByOrderID(orderID)
+	if err != nil {
+		return nil, err
+	}
+	return cert, nil
+}
+
 func (c *CertificateService) CancelCertificateOrder(id int64) (bool, error) {
 	err := c.appRepo.Cancel(id)
 	if err != nil {

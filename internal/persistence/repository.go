@@ -24,7 +24,8 @@ type CertificateApplicationRepo interface {
 }
 
 type CertificateRepo interface {
-	Save(c *models.Certificate) (int64, error)
+	Save(c *models.Certificate) (int64, int64, error)
 	FindAll() ([]models.Certificate, error)
 	FindAllByReceiverID(receiverId int64) ([]models.Certificate, error)
+	FindCertificateByOrderID(orderID int64) (*models.CertificateShort, error)
 }

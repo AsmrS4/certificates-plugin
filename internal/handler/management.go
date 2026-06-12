@@ -2,7 +2,6 @@ package handler
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -68,7 +67,6 @@ func (cmh *CertificateManagementHandler) ProcessRequest(ctx *wasmplugin.EventCon
 	return nil
 }
 
-// TODO:переписать с учетом обновленной спецификацией
 func (cmh *CertificateManagementHandler) UploadCertificate(ctx *wasmplugin.EventContext) error {
 	orderID := ctx.HTTP.Query["id"]
 	id64, err := strconv.ParseInt(orderID, 10, 64)
@@ -84,39 +82,27 @@ func (cmh *CertificateManagementHandler) UploadCertificate(ctx *wasmplugin.Event
 	}
 
 	var payload struct {
-		Filename string `json:"filename"`
-		Content  string `json:"content"`
+		FileName string `json:"file_name,omitempty"`
+		FileID   string `json:"file_id,omitempty"`
 	}
 
 	err = json.Unmarshal([]byte(ctx.HTTP.Body), &payload)
 	if err != nil {
-		ctx.JSON(400, map[string]string{"error": "Incorrect payload. Payload must contain \"filename\" and \"content\" fields."})
+		ctx.JSON(400, map[string]string{"error": "Incorrect payload. Payload must contain \"file_name\" and \"file_id\" fields."})
+		return nil
+	}
+	storageUrl, err := ctx.FileURL(payload.FileID)
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("error getting file url for file id %s: %s", payload.FileID, err.Error()))
+		ctx.JSON(400, map[string]string{"error": "Incorrect file_id. File with provided id doesn't exist."})
 		return nil
 	}
 
-	decoded, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(payload.Content, "data:application/octet-stream;base64,"))
-	if err != nil {
-		ctx.JSON(400, map[string]string{"error": "Incorrect file format. Uploaded file must be encoded with base64."})
-		ctx.LogError(fmt.Sprintf("file decode error: %s", err.Error()))
-		return nil
-	}
-
-	stored, err := ctx.FileStore(payload.Filename, "application/pdf", "document", decoded)
-	if err != nil {
-		ctx.LogError(fmt.Sprintf("file save error: %s", err.Error()))
-		ctx.JSON(500, map[string]string{"error": "Internal server error."})
-		return nil
-	}
-	url, err := ctx.FileURL(stored.ID)
-	if err != nil {
-		ctx.LogError(fmt.Sprintf("file get stored url error: %s", err.Error()))
-		ctx.JSON(500, map[string]string{"error": "Internal server error."})
-		return nil
-	}
-	err = cmh.cmService.UploadCertificateRequest(models.CertificateData{
+	_, studentID, err := cmh.cmService.UploadCertificateRequest(models.CertificateData{
 		OrderID:    id64,
-		Filename:   payload.Filename,
-		StorageURL: url,
+		Filename:   payload.FileName,
+		FileID:     payload.FileID,
+		StorageURL: storageUrl,
 	})
 	if err != nil {
 		ctx.LogError(fmt.Sprintf("file store in plugin error: %s", err.Error()))
@@ -124,6 +110,18 @@ func (cmh *CertificateManagementHandler) UploadCertificate(ctx *wasmplugin.Event
 		return nil
 	}
 	ctx.JSON(201, map[string]string{"message": "file uploaded and saved successfully."})
+
+	var event = models.OrderEvent{
+		UserID:      studentID,
+		OrderID:     id64,
+		OrderStatus: string(enums.Done),
+	}
+
+	err = wasmplugin.PublishEvent("certificate_order.updated", event)
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("failed send notification after complete: %s", err.Error()))
+	}
+
 	return nil
 }
 
