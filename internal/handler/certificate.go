@@ -27,8 +27,7 @@ func (h *CertificateHandler) CreateOrder(ctx *wasmplugin.EventContext) error {
 	id, err := h.service.CreateCertificateOrder(ctx)
 
 	if err != nil {
-		ctx.LogError(err.Error())
-		ctx.Reply(wasmplugin.NewMessage(tr("order_creation_error")))
+		ctx.Reply(wasmplugin.NewMessage(tr(err.Error())))
 		return nil
 	}
 
@@ -187,7 +186,7 @@ func (h *CertificateHandler) foundMessageToString(foundOrder *models.Certificate
 	parts = append(parts, fmt.Sprintf("%s: %s", tr("order_info_status"), tr("status_"+string(foundOrder.ApplicationStatus))))
 
 	if foundOrder.ApplicationStatus == enums.Rejected && foundOrder.RejectionReason != "" {
-		parts = append(parts, fmt.Sprintf("%s: %s", tr("order_info_rejection_reason"), foundOrder.RejectionReason))
+		parts = append(parts, fmt.Sprintf("\n%s: %s", tr("order_info_rejection_reason"), foundOrder.RejectionReason))
 	}
 
 	if foundOrder.ApplicationStatus == enums.Done && foundOrder.ObtainMethod == enums.Paper {

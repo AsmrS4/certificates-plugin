@@ -36,12 +36,13 @@ func main() {
 	wasmplugin.Run(wasmplugin.Plugin{
 		ID:      "certificates",
 		Name:    "Certificates Plugin",
-		Version: "1.3.6",
+		Version: "1.4.8",
 		Requirements: []wasmplugin.Requirement{
 			wasmplugin.Database("Store applications for a certificate").Build(),
 			wasmplugin.File("Store and serve uploaded documents appendix to the certificate").Build(),
 			wasmplugin.NotifyReq("Send notifications").Build(),
 			wasmplugin.EventsReq("Public events").Build(),
+			wasmplugin.UserInfoReq("User info").Build(),
 		},
 		Migrations: wasmplugin.MigrationsFromFS(migrationsFS, "migrations"),
 		Triggers: []wasmplugin.Trigger{
@@ -118,7 +119,16 @@ func orderCertificateCommand() wasmplugin.Trigger {
 						}
 					},
 				),
-
+			wasmplugin.ConditionalBranch(
+				wasmplugin.WhenFunc(
+					func(ctx *wasmplugin.CallbackContext) bool {
+						return ctx.Params["type"] == "Common"
+					},
+					wasmplugin.NewStep("comment").
+						LocalizedText(cat.L("enter_additional_info"), wasmplugin.StylePlain).
+						Validate(`^.{0,255}$`),
+				),
+			),
 			wasmplugin.NewStep("obtain_method").
 				LocalizedText(cat.L("select_certificate_obtain"), wasmplugin.StylePlain).
 				DynamicOptions("",

@@ -24,9 +24,9 @@ func (r *CertAppRepoImpl) Save(c *models.CertificateApplication) (int64, error) 
 	var id int64
 
 	err := r.db.QueryRow(
-		`INSERT INTO certificate_applications(student_id, full_name, certificate_type, obtain_method)
-		 VALUES ($1, $2, $3, $4) RETURNING id`,
-		c.StudentID, c.FullName, c.CertificateType, c.ObtainMethod,
+		`INSERT INTO certificate_applications(student_id, full_name, certificate_type, obtain_method, comment)
+		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		c.StudentID, c.FullName, c.CertificateType, c.ObtainMethod, c.Comment,
 	).Scan(&id)
 
 	return id, err
@@ -34,7 +34,8 @@ func (r *CertAppRepoImpl) Save(c *models.CertificateApplication) (int64, error) 
 
 func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, error) {
 	row := r.db.QueryRow(
-		`SELECT id, student_id, COALESCE(full_name, ''), application_status, certificate_type, obtain_method, COALESCE(rejection_reason, ''), created_at FROM certificate_applications WHERE id = $1`, id)
+		`SELECT id, student_id, COALESCE(full_name, ''), application_status, certificate_type, obtain_method,
+		 COALESCE(comment, ''), COALESCE(rejection_reason, ''), created_at FROM certificate_applications WHERE id = $1`, id)
 
 	var found models.CertificateApplication
 
@@ -49,7 +50,7 @@ func (r *CertAppRepoImpl) FindByID(id int64) (*models.CertificateApplication, er
 
 func (r *CertAppRepoImpl) FindAllActive(userID int64) ([]models.CertificateApplication, error) {
 	query := `
-        SELECT id, student_id, COALESCE(full_name, ''), application_status, certificate_type, obtain_method, created_at
+        SELECT id, student_id, COALESCE(full_name, ''), application_status, certificate_type, obtain_method, COALESCE(comment, ''), COALESCE(rejection_reason, ''), created_at
         FROM certificate_applications
         WHERE student_id = $1 AND application_status NOT IN ('Cancelled', 'Rejected')
         ORDER BY created_at DESC LIMIT 10
@@ -65,7 +66,7 @@ func (r *CertAppRepoImpl) FindAllActive(userID int64) ([]models.CertificateAppli
 
 func (r *CertAppRepoImpl) FindAllWithStatus(userID int64, st enums.CertificateStatus) ([]models.CertificateApplication, error) {
 	query := `
-        SELECT id, student_id, COALESCE(full_name, ''), application_status, certificate_type, obtain_method, created_at 
+        SELECT id, student_id, COALESCE(full_name, ''), application_status, certificate_type, obtain_method, COALESCE(comment, ''), COALESCE(rejection_reason, ''), created_at 
         FROM certificate_applications
         WHERE student_id = $1 AND application_status = $2
         ORDER BY created_at DESC LIMIT 10
@@ -91,7 +92,7 @@ func (r *CertAppRepoImpl) FindAllRequests(params models.FilterParams) ([]models.
 	offset := (page - 1) * limit
 
 	query := `
-        SELECT id, student_id, COALESCE(full_name, ''), application_status, certificate_type, obtain_method, created_at
+        SELECT id, student_id, COALESCE(full_name, ''), application_status, certificate_type, obtain_method, COALESCE(comment, ''), COALESCE(rejection_reason, ''), created_at
         FROM certificate_applications
         WHERE 1=1 AND application_status != 'Cancelled'`
 	countQuery := `SELECT COUNT(*) FROM certificate_applications WHERE 1=1 AND application_status != 'Cancelled'`
@@ -247,7 +248,7 @@ func scanItems(rows *sql.Rows) ([]models.CertificateApplication, error) {
 	var items []models.CertificateApplication
 	for rows.Next() {
 		var item models.CertificateApplication
-		if err := rows.Scan(&item.ID, &item.StudentID, &item.FullName, &item.ApplicationStatus, &item.CertificateType, &item.ObtainMethod, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.StudentID, &item.FullName, &item.ApplicationStatus, &item.CertificateType, &item.ObtainMethod, &item.Comment, &item.RejectionReason, &item.CreatedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -256,6 +257,6 @@ func scanItems(rows *sql.Rows) ([]models.CertificateApplication, error) {
 }
 
 func scanItem(item *models.CertificateApplication, row *sql.Row) error {
-	err := row.Scan(&item.ID, &item.StudentID, &item.FullName, &item.ApplicationStatus, &item.CertificateType, &item.ObtainMethod, &item.RejectionReason, &item.CreatedAt)
+	err := row.Scan(&item.ID, &item.StudentID, &item.FullName, &item.ApplicationStatus, &item.CertificateType, &item.ObtainMethod, &item.Comment, &item.RejectionReason, &item.CreatedAt)
 	return err
 }

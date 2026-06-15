@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/AsmrS4/certificates-plugin/internal/enums"
 	"github.com/AsmrS4/certificates-plugin/internal/models"
@@ -23,31 +24,52 @@ func New(appRepo persistence.CertificateApplicationRepo, certRepo persistence.Ce
 func (c *CertificateService) CreateCertificateOrder(ctx *wasmplugin.EventContext) (int64, error) {
 	certificateType := ctx.Param("type")
 	obtainMethod := ctx.Param("obtain_method")
+	comment := ctx.Param("comment")
 	studentID := ctx.Messenger.UserID
-	userInfo, err := ctx.GetUserInfo(studentID)
-	if err != nil {
-		return 0, fmt.Errorf("%s", err.Error())
-	}
 
 	validatedType, err := validateRequiredType(certificateType)
 	if err != nil {
+		ctx.LogError(fmt.Sprintf("validate certificate type failed: %s", fmt.Sprint(err.Error())))
 		return 0, fmt.Errorf("%s", err.Error())
 	}
 	validatedMethod, err := validateObtainMethod(obtainMethod)
 	if err != nil {
+		ctx.LogError(fmt.Sprintf("validate obtain method failed: %s", fmt.Sprint(err.Error())))
 		return 0, fmt.Errorf("%s", err.Error())
+	}
+
+	trimmedComment := strings.TrimSpace(comment)
+	if trimmedComment != "" {
+		if len(trimmedComment) > 255 {
+			ctx.LogError("comment is too long")
+			return 0, fmt.Errorf("comment_too_long")
+		}
+	}
+	if trimmedComment == "" && validatedType == enums.Common {
+		ctx.LogError("comment is required for common certificate type")
+		return 0, fmt.Errorf("comment_req")
+	}
+
+	userInfo, err := ctx.GetUserInfo(studentID)
+	var fullName string
+	if err != nil {
+		ctx.LogError(fmt.Sprintf("get user info failed: %s", fmt.Sprint(err.Error())))
+	} else {
+		fullName = userInfo.FullName
 	}
 
 	newOrder := &models.CertificateApplication{
 		StudentID:       studentID,
 		CertificateType: validatedType,
 		ObtainMethod:    validatedMethod,
-		FullName:        userInfo.FullName,
+		FullName:        fullName,
+		Comment:         trimmedComment,
 	}
 
 	id, err := c.appRepo.Save(newOrder)
 	if err != nil {
-		return 0, fmt.Errorf("%s", err.Error())
+		ctx.LogError(fmt.Sprintf("save certificate order failed: %s", fmt.Sprint(err.Error())))
+		return 0, fmt.Errorf("%s", "order_creation_error")
 	}
 
 	return id, err
@@ -110,7 +132,7 @@ func (c *CertificateService) FindAllWithStatus(userID int64, cs string) ([]model
 
 func validateRequiredType(requiredType string) (enums.CertificateType, error) {
 	if requiredType == "" {
-		return "", fmt.Errorf("Certificate type is required")
+		return "", fmt.Errorf("certificate_type_req")
 	}
 	t, err := enums.ParseCertificateType(requiredType)
 	if err != nil {
@@ -121,7 +143,7 @@ func validateRequiredType(requiredType string) (enums.CertificateType, error) {
 
 func validateObtainMethod(requiredMethod string) (enums.ObtainMethod, error) {
 	if requiredMethod == "" {
-		return "", fmt.Errorf("Obtain method is required")
+		return "", fmt.Errorf("obtain_method_req")
 	}
 	m, err := enums.ParseObtainMethod(requiredMethod)
 	if err != nil {
@@ -132,7 +154,7 @@ func validateObtainMethod(requiredMethod string) (enums.ObtainMethod, error) {
 
 func validateCertificateApplicationStatus(application_status string) (enums.CertificateStatus, error) {
 	if application_status == "" {
-		return "", fmt.Errorf("Order status is required")
+		return "", fmt.Errorf("order_status_req")
 	}
 	st, err := enums.ParseCertificateStatus(application_status)
 	if err != nil {
